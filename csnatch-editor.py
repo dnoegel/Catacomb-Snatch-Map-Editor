@@ -105,6 +105,8 @@ def save_file(filetype):
     
     filename =  chooser.get_filename()
     chooser.destroy()
+    if not filename.endswith(".bmp"):
+        return "{0}.bmp".format(filename)
     return filename
 
 ## My drawing area
@@ -221,6 +223,7 @@ class DrawThingy(gtk.DrawingArea):
         return False
         
     def motion_notify_event(self, da, event):
+        if event.x >= self.settings.WIDTH: return
         real_x, real_y = int(math.floor(event.x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(event.y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
         self.emit("position", real_x, real_y)
         
@@ -232,6 +235,8 @@ class DrawThingy(gtk.DrawingArea):
         return True
         
     def button_press_event(self, da, event):
+        
+        if event.x >= self.settings.WIDTH: return
         if event.button == 1 and self.pixmap:
             self.draw_point(da, event.x, event.y)
         elif event.button == 3 and self.pixmap:
@@ -310,8 +315,12 @@ class App(object):
         # Tiles
         #
         bb = gtk.VButtonBox()
-        for name in TILES:
+        for name in sorted(TILES.keys()):
             b = gtk.Button(name)
+            b.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(TILES[name]))
+            if TILES[name]  == "#000000":
+                lbl =  b.get_children()[0]
+                lbl.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
             bb.pack_start(b, False, False)
             b.show()
             b.connect("clicked", lambda x,y:self.drawing_area.set_object(y), name)
@@ -350,11 +359,13 @@ class App(object):
             self.window.set_title("{0} v{1} / {2}".format(__NAME__, __VERSION__,self.current_file))
 
     ## Save a bitmap to a given file
-    def save(self, filename=None):
+    def save(self, filename=None, set_filename=True):
         img = Image.new("RGB", [self.settings.SIZE_X,self.settings.SIZE_Y], "white")
         for coords, color in self.drawing_area.points.iteritems():
             img.putpixel(coords,  tuple(ord(c) for c in color[1:].decode('hex')))
         img.save(filename)
+        if set_filename:
+            self.current_file = filename
     
     
     ## Load a bitmap from a given file
@@ -415,7 +426,7 @@ class App(object):
                 #~ print tmp
                 self.save(tmp)
                 
-                save_to_jar(tmp, filename)
+                save_to_jar(tmp, filename, set_filename=False)
         elif user == "Quit":
             self.window.destroy()
         elif user == "Clear map":
