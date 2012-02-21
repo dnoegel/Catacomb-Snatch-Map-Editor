@@ -38,7 +38,7 @@ class Settings(object):
 TILES = {
     "Wall": "#ff0000",
     "Floor": "#ffffff",
-    "Door": "#ff7777",
+    "Barrier": "#ff7777",
     "Treasure": "#ffff00",
     "Hole": "#000000",
     "Rail": "#969696"
