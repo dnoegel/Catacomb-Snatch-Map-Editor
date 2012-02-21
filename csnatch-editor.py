@@ -61,6 +61,7 @@ def get_file_from_jar(jar):
 
 ## Put level1.bmp into .jar
 def save_to_jar(filename, jar):
+    print filename, jar
     with zipfile.ZipFile(jar, "a") as zf:
         zf.write(filename, "levels/level1.bmp")
         #~ return os.path.join(tmp, "levels", "level1.bmp")
@@ -105,7 +106,7 @@ def save_file(filetype):
     
     filename =  chooser.get_filename()
     chooser.destroy()
-    if not filename.endswith(".bmp"):
+    if not filename.endswith(".bmp") and filetype == "bmp":
         return "{0}.bmp".format(filename)
     return filename
 
