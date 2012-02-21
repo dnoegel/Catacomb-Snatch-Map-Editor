@@ -16,7 +16,7 @@ class Settings(object):
         self.SIZE_X = 48
         self.SIZE_Y = 48
 
-        self.GRID_WIDTH = 3
+        self.GRID_WIDTH = 1
 
         #~ self._WIDTH = self.MULTI*self.SIZE_X+(self.SIZE_X+1)*self.GRID_WIDTH
         #~ self._HEIGHT = self.MULTI*self.SIZE_Y+(self.SIZE_Y+1)*self.GRID_WIDTH
