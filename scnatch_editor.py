@@ -238,6 +238,7 @@ class App(object):
         menu_bar.show()
         
         sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.drawing_area = DrawThingy()
         self.drawing_area.set_size_request(WIDTH, HEIGHT)
         self.drawing_area.connect("position", self.position_event)
