@@ -424,9 +424,9 @@ class App(object):
             if filename:
                 tmp = tempfile.mkstemp(suffix=".bmp", prefix="csnatch.mapedit.", dir="/tmp")[1]
                 #~ print tmp
-                self.save(tmp)
+                self.save(tmp, set_filename=False)
                 
-                save_to_jar(tmp, filename, set_filename=False)
+                save_to_jar(tmp, filename)
         elif user == "Quit":
             self.window.destroy()
         elif user == "Clear map":
