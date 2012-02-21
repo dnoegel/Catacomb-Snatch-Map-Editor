@@ -10,6 +10,11 @@ import tempfile
 
 from PIL import Image
 
+## Stores some basic settings
+# MULTI: Zoom-level
+# SIZE_X, SIZE_Y: Width and height of the actual 1px map
+# GRID_WIDTH: width of the grid
+# WIDTH and HEIGHT (properties): actual dimensions of the image
 class Settings(object):
     def __init__(self):
         self.MULTI = 15
@@ -29,7 +34,7 @@ class Settings(object):
     def HEIGHT(self):
         return self.MULTI*self.SIZE_Y+(self.SIZE_Y+1)*self.GRID_WIDTH
 
-
+## Pre-defined tiles and their colors
 TILES = {
     "Wall": "#ff0000",
     "Floor": "#ffffff",
@@ -43,20 +48,24 @@ __VERSION__ = 0.1
 __AUTHOR__  = "Daniel Nögel"
 __NAME__ = "Catacomb Snatch Map Editor"
 
+
 def rgb2hex(rgb_tuple):
     return '#%02x%02x%02x' % rgb_tuple
 
+## Extract level1.bmp from .jar
 def get_file_from_jar(jar):
     tmp = tempfile.mkdtemp(prefix="csnatch.mapedit.", dir="/tmp")
     with zipfile.ZipFile(jar) as zf:
         zf.extract("levels/level1.bmp", tmp)
         return os.path.join(tmp, "levels", "level1.bmp")
-    
+
+## Put level1.bmp into .jar
 def save_to_jar(filename, jar):
     with zipfile.ZipFile(jar, "a") as zf:
         zf.write(filename, "levels/level1.bmp")
         #~ return os.path.join(tmp, "levels", "level1.bmp")
 
+## Show file dialog
 def open_file(filetype="bmp"):
     assert filetype in ["bmp", "jar"]
     
@@ -76,7 +85,8 @@ def open_file(filetype="bmp"):
     filename =  chooser.get_filename()
     chooser.destroy()
     return filename
-    
+
+## Show file dialog
 def save_file(filetype):
     assert filetype in ["bmp", "jar"]
     
@@ -97,6 +107,7 @@ def save_file(filetype):
     chooser.destroy()
     return filename
 
+## My drawing area
 class DrawThingy(gtk.DrawingArea):    
     def __init__(self, settings):
         gtk.DrawingArea.__init__(self)
@@ -119,7 +130,9 @@ class DrawThingy(gtk.DrawingArea):
         self.pixmap = None
         self.current_object = "Wall"
 
+        self.set_default_map()
 
+    def set_default_map(self):
         self.points = {}
         for i in xrange(0, self.settings.SIZE_X):
             self.points[(i, 0)] = TILES["Wall"]
@@ -131,16 +144,21 @@ class DrawThingy(gtk.DrawingArea):
             self.points[(22, i)] = TILES["Floor"]
             self.points[(23, i)] = TILES["Rail"]
             self.points[(24, i)] = TILES["Floor"]
+            
+            
 
+    ## Set the name of the current tile
     def set_object(self, obj):
         self.current_object = obj
         self.set_color(TILES[obj])
 
+    ## Set the current color (gc)
     def set_color(self, color):
         #~ self.current_gc = self.pixmap.new_gc()
         self.current_gc.set_foreground(self.get_colormap().alloc_color(color))
         #~ self.current_gc = gc
 
+    ## Draws the grid
     def draw_grid(self, da):
         self.current_gc.set_line_attributes(self.settings.GRID_WIDTH, gtk.gdk.LINE_SOLID,
                                         gtk.gdk.CAP_BUTT, gtk.gdk.JOIN_MITER)
@@ -150,12 +168,13 @@ class DrawThingy(gtk.DrawingArea):
             da.window.draw_line(self.current_gc, x+offset, 0, x+offset, self.settings.WIDTH)
             da.window.draw_line(self.current_gc, 0, x++offset, self.settings.HEIGHT, x+offset)
 
+    ## Draw all the points stored in self.points
     def draw_points(self, da):
         for x, y in self.points:
             self.set_color(self.points[(x, y)])
             da.window.draw_rectangle(self.current_gc, True, x*self.settings.MULTI+(x+1)*self.settings.GRID_WIDTH, y*self.settings.MULTI+(y+1)*self.settings.GRID_WIDTH, self.settings.MULTI, self.settings.MULTI)
 
-            
+    ## Draw a single point
     def draw_point(self, da, x, y, delete = False):
         real_x, real_y = int(math.floor(x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
         x, y = real_x*self.settings.MULTI+(real_x+1)*self.settings.GRID_WIDTH, real_y*self.settings.MULTI+(real_y+1)*self.settings.GRID_WIDTH
@@ -171,7 +190,11 @@ class DrawThingy(gtk.DrawingArea):
         
         if delete:
             self.set_object(tmp)
-        
+    
+    #
+    # Callbacks
+    #
+    
     def realize_event(self, da):
         self.current_gc = da.window.new_gc()
         self.set_color("#000000")
@@ -216,6 +239,7 @@ class DrawThingy(gtk.DrawingArea):
         else:
             print event.button
         return True
+        
     def scroll_event(self, da, event):
         if event.state  & gtk.gdk.CONTROL_MASK:
             if event.direction & gtk.gdk.SCROLL_DOWN:
@@ -227,11 +251,12 @@ class DrawThingy(gtk.DrawingArea):
             da.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
         
         
-
+## Register custom signals
 gobject.type_register(DrawThingy)
 gobject.signal_new("position", DrawThingy, gobject.SIGNAL_RUN_FIRST,
                    gobject.TYPE_NONE, (int, int, ))
 
+## Out main class
 class App(object):
     def __init__(self):
         self.window = gtk.Window()
@@ -246,9 +271,12 @@ class App(object):
         
         self.window.add(table)
         
+        #
+        # Menu
+        #
         menu = gtk.Menu()
         self.menu_items = {}
-        for i in ["Load", "Load from JAR", "---", "Save", "Save to file",  "Save to JAR", "---", "Quit"]:
+        for i in ["Clear map", "---", "Load", "Load from JAR", "---", "Save", "Save to file",  "Save to JAR", "---", "Quit"]:
             if i == "---":
                 item = gtk.SeparatorMenuItem()
             else:
@@ -266,6 +294,9 @@ class App(object):
         table.attach(menu_bar, 0, 2, 0, 1, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
         menu_bar.show()
         
+        #
+        # SW
+        #
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.drawing_area = DrawThingy(self.settings)
@@ -275,7 +306,9 @@ class App(object):
         
         table.attach(sw, 0, 1, 1, 2, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.EXPAND|gtk.FILL)
         
-        
+        #
+        # Tiles
+        #
         bb = gtk.VButtonBox()
         for name in TILES:
             b = gtk.Button(name)
@@ -286,19 +319,7 @@ class App(object):
         table.attach(bb, 1, 2, 1, 2, xoptions=gtk.SHRINK, yoptions=gtk.EXPAND|gtk.FILL)
         bb.set_layout(gtk.BUTTONBOX_START)
         bb.show()
-        
-        
-        
-        #~ bb = gtk.HButtonBox()
-        #~ b = gtk.Button(stock=gtk.STOCK_OPEN)
-        #~ b.connect("clicked", self.button_press_event, "open")
-        #~ bb.pack_start(b)
-        #~ b = gtk.Button(stock=gtk.STOCK_SAVE)
-        #~ b.connect("clicked", self.button_press_event, "save")
-        #~ bb.pack_start(b)
-        #~ bb.set_layout(gtk.BUTTONBOX_SPREAD)
-        #~ table.attach(bb, 0, 2, 1, 2, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
-        #~ bb.show_all()
+
         
         self.statusbar = gtk.Statusbar()
         table.attach(self.statusbar, 0, 2, 2, 3, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
@@ -309,16 +330,12 @@ class App(object):
         sw.show()
         self.drawing_area.show()
         
-        
-        
-        
+
         settings = gtk.settings_get_default()
         settings.props.gtk_button_images = True
         
         self.current_file = None
         
-        #~ fl = get_file_from_jar("/home/daniel/behalten/games/mojam.jar")
-        #~ self.load(fl, set_filename=False)
     
     @property
     def current_file(self):
@@ -332,9 +349,46 @@ class App(object):
             self._current_file = value
             self.window.set_title("{0} v{1} / {2}".format(__NAME__, __VERSION__,self.current_file))
 
+    ## Save a bitmap to a given file
+    def save(self, filename=None):
+        img = Image.new("RGB", [self.settings.SIZE_X,self.settings.SIZE_Y], "white")
+        for coords, color in self.drawing_area.points.iteritems():
+            img.putpixel(coords,  tuple(ord(c) for c in color[1:].decode('hex')))
+        img.save(filename)
+    
+    
+    ## Load a bitmap from a given file
+    def load(self, filename, set_filename=True):
+        img = Image.open(filename)
+        
+        _, _, w, h = img.getbbox()
+        
+        self.drawing_area.points = {}
+        
+        img= img.convert("RGB").getdata() 
+        x, y = 0, -1
+        
+        for i, pix in enumerate(img):
+            if i % w == 0: #new line
+                y+=1
+                x=0
+            if pix != (255, 255, 255):
+                self.drawing_area.points[(x, y)] = rgb2hex(pix)
+            x+=1
+        
+        self.drawing_area.draw_points(self.drawing_area)
+        self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+        if set_filename:
+            self.current_file = filename
+        else:
+            self.current_file = None
+
+
     #
     # Callbacks
     #
+    
+    ## Some menu events
     def menu_activate_event(self, menu, user):
         if user == "Load":
             filename = open_file("bmp")
@@ -364,47 +418,16 @@ class App(object):
                 save_to_jar(tmp, filename)
         elif user == "Quit":
             self.window.destroy()
-            
+        elif user == "Clear map":
+            self.drawing_area.set_default_map()
+            self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+
+    ## Show the current coords
     def position_event(self, obj, x, y):
         context_id = self.statusbar.get_context_id("pos")
         message_id = self.statusbar.push(context_id, "x{0}y{1}".format(x, y))
     
-    def button_press_event(self, btn, command):
-        if command == "save":
-            self.save()
     
-    
-    
-    def save(self, filename=None):
-        img = Image.new("RGB", [self.settings.SIZE_X,self.settings.SIZE_Y], "white")
-        for coords, color in self.drawing_area.points.iteritems():
-            img.putpixel(coords,  tuple(ord(c) for c in color[1:].decode('hex')))
-        img.save(filename)
-        
-    def load(self, filename, set_filename=True):
-        img = Image.open(filename)
-        
-        _, _, w, h = img.getbbox()
-        
-        self.drawing_area.points = {}
-        
-        img= img.convert("RGB").getdata() 
-        x, y = 0, -1
-        
-        for i, pix in enumerate(img):
-            if i % w == 0: #new line
-                y+=1
-                x=0
-            if pix != (255, 255, 255):
-                self.drawing_area.points[(x, y)] = rgb2hex(pix)
-            x+=1
-        
-        self.drawing_area.draw_points(self.drawing_area)
-        self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
-        if set_filename:
-            self.current_file = filename
-        else:
-            self.current_file = None
 
 
 
