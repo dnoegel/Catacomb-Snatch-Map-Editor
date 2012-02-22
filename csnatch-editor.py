@@ -28,6 +28,9 @@ class Settings(object):
         self.GRID_WIDTH = 1
 
         self.multi_level_support = False
+        
+        self.last_save_dir = os.path.expanduser("~/.mojam/levels")
+        self.last_load_dir = os.path.expanduser("~/.mojam/levels")
 
         #~ self._WIDTH = self.MULTI*self.SIZE_X+(self.SIZE_X+1)*self.GRID_WIDTH
         #~ self._HEIGHT = self.MULTI*self.SIZE_Y+(self.SIZE_Y+1)*self.GRID_WIDTH
@@ -98,11 +101,15 @@ def save_to_jar(filename, jar, level="level1.bmp"):
         #~ return os.path.join(tmp, "levels", "level1.bmp")
 
 ## Show file dialog
-def open_file(filetype="bmp"):
+def open_file(filetype="bmp", directory=None):
     assert filetype in ["bmp", "jar"]
     
     chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_OPEN,
                                   buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+                                  
+    if directory and os.path.exists(directory):
+        chooser.set_current_folder(directory)
+        
     if filetype == "bmp":
         ffilter=gtk.FileFilter()
         ffilter.set_name("Bitmap files")
@@ -119,11 +126,15 @@ def open_file(filetype="bmp"):
     return filename
 
 ## Show file dialog
-def save_file(filetype):
+def save_file(filetype, directory=None):
     assert filetype in ["bmp", "jar"]
     
     chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
                                   buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+    if directory and os.path.exists(directory):
+        chooser.set_current_folder(directory)
+
+
     if filetype == "bmp":
         ffilter=gtk.FileFilter()
         ffilter.set_name("Bitmap files")
@@ -137,7 +148,7 @@ def save_file(filetype):
     
     filename =  chooser.get_filename()
     chooser.destroy()
-    if not filename.endswith(".bmp") and filetype == "bmp":
+    if filename not filename.endswith(".bmp") and filetype == "bmp":
         return "{0}.bmp".format(filename)
     return filename
 
@@ -205,8 +216,10 @@ class LevelChooser(gtk.Dialog):
 
 ## My drawing area
 class DrawThingy(gtk.DrawingArea):    
-    def __init__(self, settings):
+    def __init__(self, settings, parent):
         gtk.DrawingArea.__init__(self)
+
+        self.main = parent
 
         self.set_events(gtk.gdk.EXPOSURE_MASK
                             | gtk.gdk.LEAVE_NOTIFY_MASK
@@ -352,7 +365,6 @@ class DrawThingy(gtk.DrawingArea):
             self.set_size_request(self.settings.WIDTH, self.settings.HEIGHT)
             da.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
         
-        
 ## Register custom signals
 gobject.type_register(DrawThingy)
 gobject.signal_new("position", DrawThingy, gobject.SIGNAL_RUN_FIRST,
@@ -431,14 +443,14 @@ class App(object):
         #
         # SW
         #
-        sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self.drawing_area = DrawThingy(self.settings)
+        self.sw = gtk.ScrolledWindow()
+        self.sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.drawing_area = DrawThingy(self.settings, self)
         self.drawing_area.set_size_request(self.settings.WIDTH, self.settings.HEIGHT)
         self.drawing_area.connect("position", self.position_event)
-        sw.add_with_viewport(self.drawing_area)
+        self.sw.add_with_viewport(self.drawing_area)
         
-        table.attach(sw, 0, 1, 2, 3, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.EXPAND|gtk.FILL)
+        table.attach(self.sw, 0, 1, 2, 3, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.EXPAND|gtk.FILL)
         
         #
         # Tiles
@@ -465,7 +477,7 @@ class App(object):
         
         self.window.show()
         table.show()
-        sw.show()
+        self.sw.show()
         self.drawing_area.show()
         
 
@@ -531,16 +543,18 @@ class App(object):
     ## Some menu events
     def menu_activate_event(self, menu, user):
         if user == "Load":
-            filename = open_file("bmp")
+            filename = open_file("bmp", self.settings.last_load_dir)
             if filename:
+                self.settings.last_load_dir = os.path.dirname(filename)
                 self.load(filename)
         elif user == "Save":
             if self.current_file:
                 self.save(self.current_file)
         elif user == "Save to file":
             
-            filename = save_file("bmp")
+            filename = save_file("bmp", self.settings.last_save_dir)
             if filename:
+                self.settings.last_save_dir = os.path.dirname(filename)
                 self.save(filename)
         elif user == "Load from JAR":
             filename = open_file("jar")

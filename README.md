@@ -10,14 +10,10 @@ Features
 Multi level support
 ===================
 The original version of CS does only support one level - level1.bmp.
-Several forks of the game try to implement multi level support. Right now these forks (e.g. Maescool's or Borsty's) seem to hardcode additional levels. For this reason it is not possible for the level editor, to add additional levels to the game.
 
-Anyhow it is possible to deal with those multi-level-forks:
+The perhaps most frequently used fork by Maescool and Borsty does support multi levels. In order to use it, you have to store your level-bitmaps to ~/.mojam/levels. The game will look there for levels.
 
- * The level editor support reading those levels. When opening a multi-level .jar file, you will be prompted to select the level, you want to edit.
- * When writing to a multi-level .jar file, level1.bmp (the default level) will be overwriten. 
- 
-If you do know how to compile the source, you are also able to add you levels to the LevelList (./src/com/mojang/mojam/level/LevelList.java).
+If you want to store a new level into the game's .jar file, this level editor will overwrite the existing level1.bmp. Right now there is now way around this, as the levels in the .jar-file are hardcoded. So in most cases, you want to store your levels in ~/.mojam/levels.
 
 Warning
 =======
