@@ -148,7 +148,7 @@ def save_file(filetype, directory=None):
     
     filename =  chooser.get_filename()
     chooser.destroy()
-    if filename not filename.endswith(".bmp") and filetype == "bmp":
+    if filename and not filename.endswith(".bmp") and filetype == "bmp":
         return "{0}.bmp".format(filename)
     return filename
 
