@@ -225,7 +225,8 @@ class GUI(object):
             filename = csnatch_editor_modules.gui_helpers.open_file("jar")
             if filename:
                 fl = csnatch_editor_modules.gui_helpers.get_file_from_jar(filename)
-                self.load(fl, set_filename=False)
+                if fl:
+                    self.load(fl, set_filename=False)
         elif user == "Save to JAR":
             
             filename = csnatch_editor_modules.gui_helpers.save_file("jar")
