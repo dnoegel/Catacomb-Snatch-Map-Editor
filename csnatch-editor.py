@@ -8,6 +8,9 @@ import gobject
 import zipfile
 import tempfile
 
+from xdg import BaseDirectory
+import pickle
+
 from PIL import Image
 
 __VERSION__ = 0.1
@@ -19,29 +22,65 @@ __NAME__ = "Catacomb Snatch Map Editor"
 # SIZE_X, SIZE_Y: Width and height of the actual 1px map
 # GRID_WIDTH: width of the grid
 # WIDTH and HEIGHT (properties): actual dimensions of the image
-class Settings(object):
-    def __init__(self):
-        self.MULTI = 15
-        self.SIZE_X = 48
-        self.SIZE_Y = 48
-
-        self.GRID_WIDTH = 1
-
-        self.multi_level_support = False
-        
-        self.last_save_dir = os.path.expanduser("~/.mojam/levels")
-        self.last_load_dir = os.path.expanduser("~/.mojam/levels")
-
-        #~ self._WIDTH = self.MULTI*self.SIZE_X+(self.SIZE_X+1)*self.GRID_WIDTH
-        #~ self._HEIGHT = self.MULTI*self.SIZE_Y+(self.SIZE_Y+1)*self.GRID_WIDTH
-        
-    @property
-    def WIDTH(self):
-        return self.MULTI*self.SIZE_X+(self.SIZE_X+1)*self.GRID_WIDTH
+class Settings(dict):
+    config_path =  os.path.join(BaseDirectory.xdg_config_home, "csnatch-editor")
     
-    @property
-    def HEIGHT(self):
-        return self.MULTI*self.SIZE_Y+(self.SIZE_Y+1)*self.GRID_WIDTH
+    def __init__(self):
+        dict.__init__(self)
+        
+        if os.path.exists(Settings.config_path):
+            with open(Settings.config_path) as fh:
+                try:
+                    d = pickle.loads(fh.read())
+                    for key, value in d.iteritems():
+                        dict.__setitem__(self, key, value)
+                        print "Setting", key, "to", value
+                except EOFError:
+                    print "Config empty"
+        else:
+            print "No config file found"
+        
+        for setting in [
+            ("MULTI", 15),
+            ("SIZE_X", 48),
+            ("SIZE_Y", 48),
+            ("GRID_WIDTH", 1),
+            ("multi_level_support", False),
+            ("last_save_dir", os.path.expanduser("~/.mojam/levels")),
+            ("last_load_dir", os.path.expanduser("~/.mojam/levels")),
+            ("allow_modifying_borders", False)]:
+            key, value = setting
+            if dict.get(self, key, None) is None: 
+                print key, value
+                dict.__setitem__(self, key, value)
+        print self
+        
+   
+    ## Wrap attributes to dict-items
+    def __getattribute__(self, atr):
+        return self[atr]
+    
+    def __setattr__(self, atr, value):
+        self[atr] = value
+    
+    ## Actual logic should be inserted here
+    def __getitem__(self, key):
+        if key == "WIDTH": return self.MULTI*self.SIZE_X+(self.SIZE_X+1)*self.GRID_WIDTH
+        if key == "HEIGHT": return self.MULTI*self.SIZE_Y+(self.SIZE_Y+1)*self.GRID_WIDTH
+        val = dict.__getitem__(self, key)
+        return val
+        
+    def __setitem__(self, key, val):
+        dict.__setitem__(self, key, val)
+        
+        print "Writing config"
+        print self
+        with open(Settings.config_path, "w") as fh:
+            tmpd = {}
+            for key, value in dict.iteritems(self):
+                tmpd[key] = value
+            pickled_dict = pickle.dumps(tmpd)
+            fh.write(pickled_dict)
 
 ## Pre-defined tiles and their colors
 TILES = {
@@ -119,7 +158,11 @@ def open_file(filetype="bmp", directory=None):
         ffilter.set_name("Java .jar files")
         ffilter.add_pattern("*.jar")
     chooser.add_filter(ffilter)
-    chooser.run()
+    ret = chooser.run()
+    
+    if ret == gtk.RESPONSE_CANCEL:
+        chooser.destroy()
+        return None
     
     filename =  chooser.get_filename()
     chooser.destroy()
@@ -144,7 +187,11 @@ def save_file(filetype, directory=None):
         ffilter.set_name("Java .jar files")
         ffilter.add_pattern("*.jar")
     chooser.add_filter(ffilter)
-    chooser.run()
+    ret = chooser.run()
+    
+    if ret == gtk.RESPONSE_CANCEL:
+        chooser.destroy()
+        return None
     
     filename =  chooser.get_filename()
     chooser.destroy()
@@ -287,7 +334,10 @@ class DrawThingy(gtk.DrawingArea):
     def draw_point(self, da, x, y, delete = False):
         real_x, real_y = int(math.floor(x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
         
+        # Do not allow drawing outside the grid
         if real_x >= self.settings.SIZE_X or real_y >= self.settings.SIZE_Y: return
+        # Only allow modifying the border, when the correspinding option was set
+        if not self.settings.allow_modifying_borders and (real_x == 0 or real_y == 0 or real_x == (self.settings.SIZE_X-1) or real_y == (self.settings.SIZE_Y-1)) : return
         
         x, y = real_x*self.settings.MULTI+(real_x+1)*self.settings.GRID_WIDTH, real_y*self.settings.MULTI+(real_y+1)*self.settings.GRID_WIDTH
         
@@ -381,33 +431,12 @@ class App(object):
         
         self.settings = Settings()
         #~ self.settings.MULTI=3
-        table = gtk.Table()
+        self.table = gtk.Table()
         
-        self.window.add(table)
+        self.window.add(self.table)
         
         
-        #
-        # Menu
-        #
-        menu = gtk.Menu()
-        self.menu_items = {}
-        for i in ["Clear map", "---", "Load", "Load from JAR", "---", "Save", "Save to file",  "Save to JAR", "---", "Quit"]:
-            if i == "---":
-                item = gtk.SeparatorMenuItem()
-            else:
-                item = gtk.MenuItem(i)
-                self.menu_items[i] = item
-            item.show()
-            item.connect("activate", self.menu_activate_event, i)
-            menu.append(item)
-        root_menu = gtk.MenuItem("File")
-        root_menu.set_submenu(menu)
-        root_menu.show()
-        
-        menu_bar = gtk.MenuBar()
-        menu_bar.append (root_menu)
-        table.attach(menu_bar, 0, 2, 0, 1, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
-        menu_bar.show()
+        self.create_menues()
         
         #
         # Check
@@ -436,7 +465,7 @@ class App(object):
         #~ check.connect("toggled", toggle_event)
         #~ 
         #~ hbox.show()
-        #~ table.attach(hbox, 0, 2, 1, 2, xoptions=gtk.FILL|gtk.EXPAND, yoptions=gtk.SHRINK)
+        #~ self.table.attach(hbox, 0, 2, 1, 2, xoptions=gtk.FILL|gtk.EXPAND, yoptions=gtk.SHRINK)
         
         
         
@@ -450,7 +479,7 @@ class App(object):
         self.drawing_area.connect("position", self.position_event)
         self.sw.add_with_viewport(self.drawing_area)
         
-        table.attach(self.sw, 0, 1, 2, 3, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.EXPAND|gtk.FILL)
+        self.table.attach(self.sw, 0, 1, 2, 3, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.EXPAND|gtk.FILL)
         
         #
         # Tiles
@@ -466,17 +495,17 @@ class App(object):
             b.show()
             b.connect("clicked", lambda x,y:self.drawing_area.set_object(y), name)
         bb.set_spacing(10)
-        table.attach(bb, 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.EXPAND|gtk.FILL)
+        self.table.attach(bb, 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.EXPAND|gtk.FILL)
         bb.set_layout(gtk.BUTTONBOX_START)
         bb.show()
 
         
         self.statusbar = gtk.Statusbar()
-        table.attach(self.statusbar, 0, 2, 3, 4, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
+        self.table.attach(self.statusbar, 0, 2, 3, 4, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
         self.statusbar.show()
         
         self.window.show()
-        table.show()
+        self.table.show()
         self.sw.show()
         self.drawing_area.show()
         
@@ -485,6 +514,47 @@ class App(object):
         settings.props.gtk_button_images = True
         
         self.current_file = None
+        
+    
+    def create_menues(self):
+        #
+        # Menu
+        #
+        menu = gtk.Menu()
+        self.menu_items = {}
+        for i in ["Clear map", "---", "Load", "Load from JAR", "---", "Save", "Save to file",  "Save to JAR", "---", "Quit"]:
+            if i == "---":
+                item = gtk.SeparatorMenuItem()
+            else:
+                item = gtk.MenuItem(i)
+                self.menu_items[i] = item
+            item.show()
+            item.connect("activate", self.menu_activate_event, i)
+            menu.append(item)
+        file_menu = gtk.MenuItem("File")
+        file_menu.set_submenu(menu)
+        file_menu.show()
+        
+        
+        def toggled_menu(item):
+            self.settings.allow_modifying_borders = item.get_active()
+        
+        menu = gtk.Menu()
+        item = gtk.CheckMenuItem("Allow modifying the borders")
+        item.set_active(self.settings.allow_modifying_borders)
+        item.show()
+        item.connect("toggled", toggled_menu)
+        menu.append(item)
+        preferences_menu = gtk.MenuItem("Preferences")
+        preferences_menu.set_submenu(menu)
+        preferences_menu.show()
+        
+        menu_bar = gtk.MenuBar()
+        menu_bar.append (file_menu)
+        menu_bar.append (preferences_menu)
+        self.table.attach(menu_bar, 0, 2, 0, 1, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
+        menu_bar.show()
+        
         
     
     @property
