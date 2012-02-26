@@ -10,7 +10,7 @@ import csnatch_editor_modules.settings
 import csnatch_editor_modules.drawingarea
 import csnatch_editor_modules.gui_helpers
 
-from csnatch_editor_modules import TILES
+from csnatch_editor_modules import TILES, TILE_NAMES, COLORS
 
 from PIL import Image
 
@@ -80,15 +80,16 @@ class GUI(object):
         # Tiles
         #
         bb = gtk.VButtonBox()
-        for name in sorted(TILES.keys()):
+        for tile in TILES:
+            name = TILE_NAMES[tile]
             b = gtk.Button(name)
-            b.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(TILES[name]))
-            if TILES[name]  == "#000000":
+            b.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(TILES[tile]))
+            if TILES[tile]  == "#000000":
                 lbl =  b.get_children()[0]
                 lbl.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
             bb.pack_start(b, False, False)
             b.show()
-            b.connect("clicked", lambda x,y:self.drawing_area.set_object(y), name)
+            b.connect("clicked", lambda x,y:self.drawing_area.set_object(y), tile)
         bb.set_spacing(10)
         self.table.attach(bb, 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.EXPAND|gtk.FILL)
         bb.set_layout(gtk.BUTTONBOX_START)
@@ -167,8 +168,8 @@ class GUI(object):
     ## Save a bitmap to a given file
     def save(self, filename=None, set_filename=True):
         img = Image.new("RGB", [self.settings.SIZE_X,self.settings.SIZE_Y], "white")
-        for coords, color in self.drawing_area.points.iteritems():
-            img.putpixel(coords,  tuple(ord(c) for c in color[1:].decode('hex')))
+        for coords, tile in self.drawing_area.tiles.points.iteritems():
+            img.putpixel(coords,  tuple(ord(c) for c in tile.color[1:].decode('hex')))
         img.save(filename)
         if set_filename:
             self.current_file = filename
@@ -182,6 +183,9 @@ class GUI(object):
         
         self.drawing_area.points = {}
         
+        self.settings.SIZE_X = w
+        self.settings.SIZE_Y = h
+        
         img= img.convert("RGB").getdata() 
         x, y = 0, -1
         
@@ -189,12 +193,15 @@ class GUI(object):
             if i % w == 0: #new line
                 y+=1
                 x=0
-            if pix != (255, 255, 255):
-                self.drawing_area.points[(x, y)] = csnatch_editor_modules.gui_helpers.rgb2hex(pix)
+            #~ if pix != (255, 255, 255):
+            hex_color = csnatch_editor_modules.gui_helpers.rgb2hex(pix)
+            tile = COLORS[hex_color]
+            self.drawing_area.tiles.place_tile(tile, x, y)
+            
             x+=1
         
         self.drawing_area.draw_points(self.drawing_area)
-        self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+        #~ self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
         if set_filename:
             self.current_file = filename
         else:
@@ -242,12 +249,12 @@ class GUI(object):
         elif user == "Quit":
             self.window.destroy()
         elif user == "Clear map":
-            self.drawing_area.set_default_map()
+            self.drawing_area.tiles.set_default_map()
             self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
 
     ## Show the current coords
     def position_event(self, obj, x, y):
         context_id = self.statusbar.get_context_id("pos")
-        message_id = self.statusbar.push(context_id, "x{0}y{1}".format(x, y))
+        message_id = self.statusbar.push(context_id, "x{0}y{1}    | Size: {2}x{3}    |    Zoom: {4}".format(x, y, self.settings.SIZE_X, self.settings.SIZE_Y, self.settings.MULTI))
     
     

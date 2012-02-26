@@ -1,10 +1,13 @@
 # coding: utf-8
 
+
 import gtk
 import gobject
 import math
 
-from csnatch_editor_modules import TILES
+from csnatch_editor_modules import *
+import csnatch_editor_modules.tiles 
+
 
 ## My drawing area
 class DrawThingy(gtk.DrawingArea):    
@@ -12,7 +15,9 @@ class DrawThingy(gtk.DrawingArea):
         gtk.DrawingArea.__init__(self)
 
         self.main = parent
-
+        self.settings = settings
+        
+        
         self.set_events(gtk.gdk.EXPOSURE_MASK
                             | gtk.gdk.LEAVE_NOTIFY_MASK
                             | gtk.gdk.BUTTON_PRESS_MASK
@@ -26,27 +31,12 @@ class DrawThingy(gtk.DrawingArea):
         self.connect("button_press_event", self.button_press_event)
         self.connect('realize',       self.realize_event)
         
-        self.settings = settings
         
         self.pixmap = None
-        self.current_object = "Wall"
-
-        self.set_default_map()
-
-    def set_default_map(self):
-        self.points = {}
-        for i in xrange(0, self.settings.SIZE_X):
-            self.points[(i, 0)] = TILES["Wall"]
-            self.points[(i, self.settings.SIZE_Y-1)] = TILES["Wall"]
-        for i in xrange(0, self.settings.SIZE_Y):
-            self.points[(0, i)] = TILES["Wall"]
-            self.points[(self.settings.SIZE_X-1, i)] = TILES["Wall"]
-        for i in [0, 47]:
-            self.points[(22, i)] = TILES["Floor"]
-            self.points[(23, i)] = TILES["Rail"]
-            self.points[(24, i)] = TILES["Floor"]
-            
-            
+        self.current_object = WALL
+        self.set_double_buffered(True)
+        #~ self.realize()
+        
 
     ## Set the name of the current tile
     def set_object(self, obj):
@@ -61,6 +51,7 @@ class DrawThingy(gtk.DrawingArea):
 
     ## Draws the grid
     def draw_grid(self, da):
+        if self.settings.GRID_WIDTH == 0: return
         self.current_gc.set_line_attributes(self.settings.GRID_WIDTH, gtk.gdk.LINE_SOLID,
                                         gtk.gdk.CAP_BUTT, gtk.gdk.JOIN_MITER)
         offset = int(self.settings.GRID_WIDTH / 2.0)
@@ -71,12 +62,100 @@ class DrawThingy(gtk.DrawingArea):
 
     ## Draw all the points stored in self.points
     def draw_points(self, da):
-        for x, y in self.points:
-            self.set_color(self.points[(x, y)])
-            da.window.draw_rectangle(self.current_gc, True, x*self.settings.MULTI+(x+1)*self.settings.GRID_WIDTH, y*self.settings.MULTI+(y+1)*self.settings.GRID_WIDTH, self.settings.MULTI, self.settings.MULTI)
+        print "draw points"
+        for x in xrange(0, (self.settings.SIZE_X)):
+            for y in xrange(0, (self.settings.SIZE_Y)):
+                print x, y
+                tile = self.tiles.points[(x, y)]
+                tile_obj = self.tiles.place_tile(tile.tile, tile.x, tile.y)
+                self.__draw_pixbuf(da, tile_obj.pixbuf, tile_obj.x, tile_obj.y, offset=tile_obj.offset)
+                
+        da.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+        return
+        print "points"
+        for x in xrange(0, self.settings.SIZE_X):
+            for y in xrange(0, self.settings.SIZE_Y):
+                obj = self.points.get((x, y), None)
+                if  obj is None: continue
+                obj = COLORS[obj]                
+                self.set_color(self.points[(x, y)])
+                da.window.draw_rectangle(self.current_gc, True, x*self.settings.MULTI+(x+1)*self.settings.GRID_WIDTH, y*self.settings.MULTI+(y+1)*self.settings.GRID_WIDTH, self.settings.MULTI, self.settings.MULTI)
+                
+                c = 0
+                values = [1, 2, 4, 8]
+                for v, i in enumerate([(0, -1), (-1, 0), (1, 0), (0, 1)]):
+                    x1, y1 = x+i[0], y+i[1]
+                    t = self.points.get((x1, y1), None)
+                    if t and COLORS[t] == "Rail":
+                        c += values[v]
+                        
+                
+                _x, _y = x*self.settings.MULTI+(x+1)*self.settings.GRID_WIDTH, y*self.settings.MULTI+(y+1)*self.settings.GRID_WIDTH
+                if obj == "Rail":
+                    offset, sub = self.tiles.get_tile(obj, self.settings.MULTI, self.settings.MULTI, c)
+                else:
+                    offset, sub = self.tiles.get_tile(obj, self.settings.MULTI, self.settings.MULTI)
+                da.window.draw_pixbuf(None, sub, 0, 0, _x, _y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)        
+    
+    def draw_point(self, da, tile_x, tile_y, tile, force=False, update_neighbours=True):
+        #~ print "draw", tile_x, tile_y, TILE_NAMES[tile]
+        
+        # Do not allow drawing outside the grid
+        if tile_x >= self.settings.SIZE_X or tile_y >= self.settings.SIZE_Y: return
+        # Only allow modifying the border, when the correspinding option was set
+        if not (self.settings.allow_modifying_borders or force) and (tile_x == 0 or tile_y == 0 or tile_x == (self.settings.SIZE_X-1) or tile_y == (self.settings.SIZE_Y-1)) : return
 
+        ## fix top tile if the current one was a big tile
+        old_tile =  self.tiles.points[(tile_x, tile_y)]
+        old_neighbor = old_tile.get_neighbour(TOP)
+        if old_neighbor and old_tile.is_big_tile():
+            tile_obj = self.tiles.place_tile(old_neighbor.tile, old_neighbor.x, old_neighbor.y)
+            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_obj.x, tile_obj.y, offset=tile_obj.offset)
+        
+        ## RAIL
+        if tile == RAIL:
+            tile_obj = self.tiles.place_tile(FLOOR, tile_x, tile_y)
+            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
+            
+            tile_obj = self.tiles.place_tile(tile, tile_x, tile_y)
+            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
+            
+            if update_neighbours:
+                for pos in (TOP, LEFT, RIGHT, BOTTOM):
+                    neighbour =  tile_obj.get_neighbour(pos)
+                    if neighbour and neighbour.tile == tile_obj.tile:
+                        self.draw_point(da, neighbour.x, neighbour.y, tile, update_neighbours=False)
+                    
+        else:
+            tile_obj = self.tiles.place_tile(tile, tile_x, tile_y)
+            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
+        
+        ## Fix bottom tile if it was a big tile
+        neighbour =  tile_obj.get_neighbour(BOTTOM)
+        if neighbour and neighbour.is_big_tile():
+            #~ tile_obj = self.tiles.place_tile(neighbour.tile, neighbour.x, neighbour.y)
+            self.draw_point(da, neighbour.x, neighbour.y, neighbour.tile)
+            #~ self.__draw_pixbuf(da, neighbour.pixbuf, neighbour.x, neighbour.y, offset=tile_obj.offset)
+                   
+    def __draw_pixbuf(self, da, pb, x, y, offset):
+        x = x * (self.settings.GRID_WIDTH + self.settings.MULTI)
+        y = y * (self.settings.GRID_WIDTH + self.settings.MULTI)
+        da.window.draw_pixbuf(None, pb, 0, 0, x, y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)
+        #~ self.queue.put((da, pb, x, y, offset))
+        #~ da.window.draw_drawable(self.current_gc, pb, 0, 0, x, y+offset, -1, -1)
+        
+    #~ def __process_queue(self):
+        #~ try:
+            #~ while True:
+                #~ da, pb, x, y, offset = self.queue.get(block=False)
+                #~ x = x * (self.settings.GRID_WIDTH + self.settings.MULTI)
+                #~ y = y * (self.settings.GRID_WIDTH + self.settings.MULTI)
+                #~ da.window.draw_pixbuf(None, pb, 0, 0, x, y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)
+        #~ except Queue.Empty:
+            #~ pass
+        #~ return True
     ## Draw a single point
-    def draw_point(self, da, x, y, delete = False):
+    def draw_point_old(self, da, x, y, delete = False, tile=None):
         real_x, real_y = int(math.floor(x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
         
         # Do not allow drawing outside the grid
@@ -85,18 +164,55 @@ class DrawThingy(gtk.DrawingArea):
         if not self.settings.allow_modifying_borders and (real_x == 0 or real_y == 0 or real_x == (self.settings.SIZE_X-1) or real_y == (self.settings.SIZE_Y-1)) : return
         
         x, y = real_x*self.settings.MULTI+(real_x+1)*self.settings.GRID_WIDTH, real_y*self.settings.MULTI+(real_y+1)*self.settings.GRID_WIDTH
+        if not tile:
+            obj = self.current_object
+        else:
+            obj = tile
         
+        
+        self.tiles.points[(real_x, real_y)] = TILES[obj]
+        
+        if obj == "Rail":
+
+            
+            
+            offset, sub = self.tiles.get_tile("Floor", self.settings.MULTI, self.settings.MULTI)
+            da.window.draw_pixbuf(None, sub, 0, 0, x, y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)       
+            
+            offset, sub = self.tiles.get_tile(obj, self.settings.MULTI, self.settings.MULTI, c)
+            
+            if not tile:
+                for v, i in enumerate([(0, -1), (-1, 0), (1, 0), (0, 1)]):
+                    x1, y1 = x+i[0]*self.settings.MULTI, y+i[1]*self.settings.MULTI
+                    rx1, ry1 = real_x+i[0], real_y+i[1]
+                    print real_x, real_y, rx1, ry1
+                    t = self.points.get((rx1, ry1), None)
+                    if t and COLORS[t] == "Rail":
+                        self.draw_point(da, x1, y1, delete, "Rail")
+        else:
+            offset, sub = self.tiles.get_tile(obj, self.settings.MULTI, self.settings.MULTI)
+        
+        #~ pixbuf = gtk.gdk.pixbuf_new_from_file("map/floortiles.png") #one way to load a pixbuf
+        #~ sub = pixbuf.subpixbuf(0, 0, 32, 32)
+        #~ sub = sub.scale_simple(self.settings.MULTI, self.settings.MULTI, gtk.gdk.INTERP_BILINEAR)
+        da.window.draw_pixbuf(None, sub, 0, 0, x, y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)        
+        
+        if self.current_object == "Wall" and self.points.get((real_x, real_y+1), None) == TILES[self.current_object]:
+            self.draw_point(da, x, y+self.settings.MULTI, delete=False)
+        
+        """
         if delete:
             tmp = self.current_object
             self.current_object = "Floor"
             self.set_color("#ffffff")
-        da.window.draw_rectangle(self.current_gc, True, x, y, self.settings.MULTI, self.settings.MULTI)
+        #da.window.draw_rectangle(self.current_gc, True, x, y, self.settings.MULTI, self.settings.MULTI)
+
         #~ da.queue_draw_area(x, y, self.settings.MULTI, self.settings.MULTI)
+        """
         
-        self.points[(real_x, real_y)] = TILES[self.current_object]
         
-        if delete:
-            self.set_object(tmp)
+        #~ if delete:
+            #~ self.set_object(tmp)
     
     #
     # Callbacks
@@ -105,7 +221,10 @@ class DrawThingy(gtk.DrawingArea):
     def realize_event(self, da):
         self.current_gc = da.window.new_gc()
         self.set_color("#000000")
-        
+        self.tiles = csnatch_editor_modules.tiles.Tiles(self.settings, self)
+        #~ self.draw_points(da)
+        #~ da.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+        #~ raw_input()
 
     def configure_event(self, da, event):
         #~ x, y, width, height = da.get_allocation()
@@ -116,49 +235,85 @@ class DrawThingy(gtk.DrawingArea):
         return True
     
     def expose_event(self, da, event):
-        
-        
+        #~ print "expose"
         x , y, width, height = event.area
-        da.window.draw_drawable(self.current_gc, self.pixmap, x, y, x, y, width, height)
+        #~ print x, width
+        b = self.settings.GRID_WIDTH + self.settings.MULTI
+        real_x, real_y = int(math.floor(x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
+        real_w, real_h = int(math.ceil(width/(self.settings.MULTI+self.settings.GRID_WIDTH)))+1, int(math.ceil(height/(self.settings.MULTI+self.settings.GRID_WIDTH)))+1
         
+        real_x -= 1 
+        real_y -= 1
+        real_h += 5
+        real_w += 5 
         
-        self.draw_grid(da)
-        self.draw_points(da)
+        real_x = max(0, real_x)
+        real_y = max(0, real_y)
+        if real_x > self.settings.SIZE_X: real_x = self.settings.SIZE_X-1
+        if real_w + real_x > self.settings.SIZE_X: real_w = (self.settings.SIZE_X)-real_x
+        if real_y > self.settings.SIZE_Y: real_y = self.settings.SIZE_Y-1
+        if real_h + real_y > self.settings.SIZE_Y: real_h = (self.settings.SIZE_Y)-real_y
         
+        i = 0
+        points = self.tiles.points
+        for x in xrange(real_x, real_x+real_w, 1):
+            for y in xrange(real_y, real_y+real_h, 1):
+                i+=1
+                #~ _x = x * b
+                #~ _y = y * b
+                tile = points[(x, y)]
+                #~ _x, _y= x*(self.settings.MULTI+self.settings.GRID_WIDTH), y*(self.settings.MULTI+self.settings.GRID_WIDTH)
+                #~ offset, sub = self.tiles.get_tile(obj, self.settings.MULTI, self.settings.MULTI)
+                #~ da.window.draw_pixbuf(None, sub, 0, 0, _x, _y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)  
+                #~ assert x >= 0 and y>=0
+                self.draw_point(da, x, y, tile.tile, force=True)
+
+        print i
+
+        ## what was that for??
+        #~ da.window.draw_drawable(self.current_gc, self.pixmap, x, y, x, y, width, height)
+        
+        #~ self.draw_grid(da)
+        #~ self.draw_points(da)
+        #~ 
         return False
         
     def motion_notify_event(self, da, event):
-        #~ if event.x >= self.settings.WIDTH: return
-        real_x, real_y = int(math.floor(event.x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(event.y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
-        self.emit("position", real_x, real_y)
+        
+        x, y = int(math.floor(event.x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(event.y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
+        self.emit("position", x, y)
         
         if event.state & gtk.gdk.BUTTON1_MASK and self.pixmap:
-            self.draw_point(da, event.x, event.y)
+            self.draw_point(da, x, y, self.current_object)
         elif event.state & gtk.gdk.BUTTON3_MASK and self.pixmap:
-            self.draw_point(da, event.x, event.y, delete=True)
+            self.draw_point(da, x, y, FLOOR)
         
         return True
         
     def button_press_event(self, da, event):
         
-        #~ if event.x >= self.settings.WIDTH: return
+        x, y = int(math.floor(event.x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(event.y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
+
         if event.button == 1 and self.pixmap:
-            self.draw_point(da, event.x, event.y)
+            self.draw_point(da, x, y, self.current_object)
         elif event.button == 3 and self.pixmap:
-            self.draw_point(da, event.x, event.y, delete=True)
+            self.draw_point(da, x, y, FLOOR)
         else:
             print event.button
         return True
         
     def scroll_event(self, da, event):
         if event.state  & gtk.gdk.CONTROL_MASK:
-            if event.direction & gtk.gdk.SCROLL_DOWN:
-                self.settings.MULTI-=1
-            elif not event.direction | gtk.gdk.SCROLL_UP:
-                self.settings.MULTI+=1
+            if event.direction & gtk.gdk.SCROLL_DOWN and self.settings.MULTI >= 2:
+                self.settings.MULTI-=3
+            elif not event.direction | gtk.gdk.SCROLL_UP and self.settings.MULTI <50:
+                self.settings.MULTI+=3
                 
             self.set_size_request(self.settings.WIDTH, self.settings.HEIGHT)
-            da.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+            #~ da.queue_draw_area(0, 0, self.settings.WIDTH*10, self.settings.HEIGHT*10)
+            
+            real_x, real_y = int(math.floor(event.x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(event.y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
+            self.emit("position", real_x, real_y)
         
 ## Register custom signals
 gobject.type_register(DrawThingy)

@@ -60,11 +60,13 @@ class Settings(dict):
     def __setitem__(self, key, val):
         dict.__setitem__(self, key, val)
         
-        print "Writing config"
-        print self
+        #~ print "Writing config"
+        #~ print self
         with open(Settings.config_path, "w") as fh:
             tmpd = {}
             for key, value in dict.iteritems(self):
                 tmpd[key] = value
+            tmpd["SIZE_X"] = 48
+            tmpd["SIZE_Y"] = 48
             pickled_dict = pickle.dumps(tmpd)
             fh.write(pickled_dict)
