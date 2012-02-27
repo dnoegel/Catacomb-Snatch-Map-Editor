@@ -50,6 +50,7 @@ class Tiles(object):
         rails = os.path.join(self.path, "rails.png")
         spikes = os.path.join(self.path, "spike_trap_eglerion_32.png")
         spawner = os.path.join(self.path, "spawner.png")
+        loot = os.path.join(self.path, "pickup_gem_diamond_24.png")
         turret1 = os.path.join(self.path, "turret.png")
         
         pb_floortiles = gtk.gdk.pixbuf_new_from_file(floortiles)
@@ -57,6 +58,7 @@ class Tiles(object):
         pb_treasure_barrier = gtk.gdk.pixbuf_new_from_file(treasure)
         pb_spikes = gtk.gdk.pixbuf_new_from_file(spikes)
         pb_spawner = gtk.gdk.pixbuf_new_from_file(spawner)
+        pb_loot = gtk.gdk.pixbuf_new_from_file(loot)
         pb_turret1 = gtk.gdk.pixbuf_new_from_file(turret1)
 
         self.positions = {
@@ -77,6 +79,8 @@ class Tiles(object):
             TEAM1_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
             TEAM2_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
             NEUTRAL_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
+            
+            LOOT: (0, (24, 24), (24, 24), [(i, 0) for i in xrange(0, 14)], pb_loot),
         }
         self.settings = settings
         self.set_default_map()

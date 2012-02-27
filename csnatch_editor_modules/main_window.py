@@ -31,6 +31,8 @@ class GUI(object):
         
         self.window.add(self.table)
         
+        self.accel_group = gtk.AccelGroup()
+        self.window.add_accel_group(self.accel_group)
         
         self.create_menues()
         
@@ -126,12 +128,17 @@ class GUI(object):
         #
         menu = gtk.Menu()
         self.menu_items = {}
-        for i in ["Clear map", "---", "Load", "Load from JAR", "---", "Save", "Save to file",  "Save to JAR", "---", "Quit"]:
+        accelerators = [None, None, "<Control>O", None, None, "<Control>S", "<Control><Shift>S", None, None, "<Control>Q"]
+        for idx, i in enumerate(["Clear map", "---", "Load", "Load from JAR", "---", "Save", "Save to file",  "Save to JAR", "---", "Quit"]):
             if i == "---":
                 item = gtk.SeparatorMenuItem()
             else:
                 item = gtk.MenuItem(i)
                 self.menu_items[i] = item
+            acc = accelerators[idx]
+            if acc:
+                key, mod = gtk.accelerator_parse(acc)
+                item.add_accelerator("activate", self.accel_group, key, mod, gtk.ACCEL_VISIBLE)
             item.show()
             item.connect("activate", self.menu_activate_event, i)
             menu.append(item)
