@@ -262,7 +262,11 @@ class GUI(object):
 
     ## Show the current coords
     def position_event(self, obj, x, y):
+        try:
+            tile_name = TILE_NAMES[self.drawing_area.tiles.points[(x,y)].tile]
+        except KeyError:
+            tile_name = ""
         context_id = self.statusbar.get_context_id("pos")
-        message_id = self.statusbar.push(context_id, "x{0}y{1}    | Size: {2}x{3}    |    Zoom: {4}".format(x, y, self.settings.SIZE_X, self.settings.SIZE_Y, self.settings.MULTI))
+        message_id = self.statusbar.push(context_id, "x{0}y{1}    | Size: {2}x{3}    |    Zoom: {4}    |    Tile under mouse: {5}".format(x, y, self.settings.SIZE_X, self.settings.SIZE_Y, self.settings.MULTI, tile_name))
     
     
