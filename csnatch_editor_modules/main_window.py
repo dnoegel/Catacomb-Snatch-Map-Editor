@@ -80,6 +80,8 @@ class GUI(object):
         #
         # Tiles
         #
+        sw2 =  gtk.ScrolledWindow()
+        sw2.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         t = csnatch_editor_modules.tiles.Tiles(self.settings)
         bb = gtk.VButtonBox()
         for tile in TILES:
@@ -95,8 +97,10 @@ class GUI(object):
             b.show()
             b.connect("clicked", lambda x,y:self.drawing_area.set_object(y), tile)
         #~ bb.set_spacing(10)
-        self.table.attach(bb, 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.EXPAND|gtk.FILL)
+        sw2.add_with_viewport(bb)
+        self.table.attach(sw2, 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.EXPAND|gtk.FILL)
         bb.set_layout(gtk.BUTTONBOX_START)
+        sw2.show()
         bb.show()
 
         

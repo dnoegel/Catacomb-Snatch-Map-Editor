@@ -175,11 +175,22 @@ class LevelChooser(gtk.Dialog):
 
 class ImageButton(gtk.Button):
     def __init__(self, pb, text,):
-        gtk.Button.__init__(self, text)
+        gtk.Button.__init__(self)
+        
+        bb = gtk.HBox()
+        bb.set_spacing(10)
+        
+        self.lbl = gtk.Label(text)
         self.img = gtk.Image()
 
+        bb.pack_start(self.img, False, False)
+        bb.pack_start(self.lbl, True, True)
+        
+        self.add(bb)
+        
         self.setimage(pb)
+        self.show_all()
         
     def setimage(self, pb):
         self.img.set_from_pixbuf(pb)
-        self.set_image(self.img)
+        #~ self.set_image(self.img)

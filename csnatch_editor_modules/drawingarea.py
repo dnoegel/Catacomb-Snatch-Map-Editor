@@ -105,12 +105,15 @@ class DrawThingy(gtk.DrawingArea):
         # Only allow modifying the border, when the correspinding option was set
         if not (self.settings.allow_modifying_borders or force) and (tile_x == 0 or tile_y == 0 or tile_x == (self.settings.SIZE_X-1) or tile_y == (self.settings.SIZE_Y-1)) : return
 
+
         ## fix top tile if the current one was a big tile
-        old_tile =  self.tiles.points[(tile_x, tile_y)]
-        old_neighbor = old_tile.get_neighbour(TOP)
-        if old_neighbor and old_tile.tile in BIG_TILES:
-            tile_obj = self.tiles.place_tile(old_neighbor.tile, old_neighbor.x, old_neighbor.y)
-            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_obj.x, tile_obj.y, offset=tile_obj.offset)
+        # Not needed if triggered by expose event
+        if not expose:
+            old_tile =  self.tiles.points[(tile_x, tile_y)]
+            old_neighbor = old_tile.get_neighbour(TOP)
+            if old_neighbor and old_tile.tile in BIG_TILES:
+                tile_obj = self.tiles.place_tile(old_neighbor.tile, old_neighbor.x, old_neighbor.y)
+                self.__draw_pixbuf(da, tile_obj.pixbuf, tile_obj.x, tile_obj.y, offset=tile_obj.offset)
 
 
         
@@ -143,7 +146,7 @@ class DrawThingy(gtk.DrawingArea):
         neighbour =  tile_obj.get_neighbour(BOTTOM)
         if neighbour and neighbour.tile in BIG_TILES:
             #~ tile_obj = self.tiles.place_tile(neighbour.tile, neighbour.x, neighbour.y)
-            self.draw_point(da, neighbour.x, neighbour.y, neighbour.tile)
+            self.draw_point(da, neighbour.x, neighbour.y, neighbour.tile, force=True)
             #~ self.__draw_pixbuf(da, neighbour.pixbuf, neighbour.x, neighbour.y, offset=tile_obj.offset)
                    
     def __draw_pixbuf(self, da, pb, x, y, offset):
@@ -247,7 +250,9 @@ class DrawThingy(gtk.DrawingArea):
         #~ print "expose"
         x , y, width, height = event.area
         #~ print x, width
+        
         b = self.settings.GRID_WIDTH + self.settings.MULTI
+        
         real_x, real_y = int(math.floor(x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
         real_w, real_h = int(math.ceil(width/(self.settings.MULTI+self.settings.GRID_WIDTH)))+1, int(math.ceil(height/(self.settings.MULTI+self.settings.GRID_WIDTH)))+1
         

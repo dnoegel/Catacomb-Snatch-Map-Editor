@@ -1,6 +1,6 @@
 # coding: utf-8
 
-__VERSION__ = 0.1
+__VERSION__ = 0.2
 __AUTHOR__  = "Daniel Nögel"
 __NAME__ = "Catacomb Snatch Map Editor"
 
@@ -15,15 +15,21 @@ __NAME__ = "Catacomb Snatch Map Editor"
  TREASURE,
  HOLE,
  RAIL,
- SPIKES
-) = range(7)
+ SPIKES,
+ BAT_SPAWNER,
+ SNAKE_SPAWNER,
+ MUMMY_SPAWNER,
+ SCARAB_SPAWNER
+) = range(11)
 
+## These tiles will need a special treatment when placed
+BIG_TILES = [WALL, BARRIER, TREASURE, BAT_SPAWNER, SNAKE_SPAWNER, MUMMY_SPAWNER, SCARAB_SPAWNER]
+## Transparent tiles; blit some ground first
+NEED_GROUND = [RAIL, SPIKES, BAT_SPAWNER, SNAKE_SPAWNER, MUMMY_SPAWNER, SCARAB_SPAWNER]
+## Names for the tiles
+TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail", "Spike Trap", "Bat spawner", "Snake spawner", "Mummy spawner", "Scarab spawner"]
 
-BIG_TILES = [WALL, BARRIER, TREASURE]
-NEED_GROUND = [RAIL, SPIKES]
-
-TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail", "Spike Trap"]
-
+## Tiles2Color
 TILES = {
     WALL: "#ff0000",
     FLOOR: "#ffffff",
@@ -31,11 +37,14 @@ TILES = {
     TREASURE: "#ffff00",
     HOLE: "#000000",
     RAIL: "#969696",
-    SPIKES: "#0000ff"
+    SPIKES: "#0000ff",
+    BAT_SPAWNER: "#aa0000",
+    SNAKE_SPAWNER: "#00aa00",
+    MUMMY_SPAWNER: "#0000aa",
+    SCARAB_SPAWNER: "#aaaa00"
 }
 
-
-
+## Color2Tile
 COLORS = dict((v,k) for k, v in TILES.iteritems())
 
 
