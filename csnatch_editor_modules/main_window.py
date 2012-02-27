@@ -168,10 +168,11 @@ class GUI(object):
     def current_file(self, value):
         if not value:
             self.menu_items["Save"].set_sensitive(False)
+            self.window.set_title("{0} v{1}".format(csnatch_editor_modules.__NAME__, csnatch_editor_modules.__VERSION__))
         else:
             self.menu_items["Save"].set_sensitive(True)
             self._current_file = value
-            self.window.set_title("{0} v{1} / {2}".format(csnatch_editor_modules.__NAME__, csnatch_editor_modules.__VERSION__,self.current_file))
+            self.window.set_title("{0} v{1} - {2}".format(csnatch_editor_modules.__NAME__, csnatch_editor_modules.__VERSION__,self.current_file))
 
     ## Save a bitmap to a given file
     def save(self, filename=None, set_filename=True):
@@ -259,6 +260,7 @@ class GUI(object):
         elif user == "Clear map":
             self.drawing_area.tiles.set_default_map()
             self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+            self.current_file = None
 
     ## Show the current coords
     def position_event(self, obj, x, y):
