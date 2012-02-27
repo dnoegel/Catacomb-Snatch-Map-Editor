@@ -52,6 +52,7 @@ class Tiles(object):
         spawner = os.path.join(self.path, "spawner.png")
         loot = os.path.join(self.path, "pickup_gem_diamond_24.png")
         turret1 = os.path.join(self.path, "turret.png")
+        dark = os.path.join(self.path, "dark.png")
         
         pb_floortiles = gtk.gdk.pixbuf_new_from_file(floortiles)
         pb_rails = gtk.gdk.pixbuf_new_from_file(rails)
@@ -60,6 +61,7 @@ class Tiles(object):
         pb_spawner = gtk.gdk.pixbuf_new_from_file(spawner)
         pb_loot = gtk.gdk.pixbuf_new_from_file(loot)
         pb_turret1 = gtk.gdk.pixbuf_new_from_file(turret1)
+        pb_dark = gtk.gdk.pixbuf_new_from_file(dark)
 
         self.positions = {
             ##    offset tilesize   grid             positions
@@ -81,6 +83,7 @@ class Tiles(object):
             NEUTRAL_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
             
             LOOT: (0, (24, 24), (24, 24), [(i, 0) for i in xrange(0, 14)], pb_loot),
+            "DARK": (0, (32, 32), (32, 32), [(1, 1)], pb_dark),
         }
         self.settings = settings
         self.set_default_map()
@@ -153,14 +156,17 @@ class Tiles(object):
             if surrounding == 3: position = 5
             if surrounding in [15, 7, 11, 13, 14]: position = 6
             position = (position, 0)
-
-        
+        elif tile.tile == HOLE:
+            if tile.check_neighbour(TOP, tile.tile):
+                offset, tilesize, grid, positions, pb =  self.positions["DARK"]
+                position = positions[0]
         x = tilesize[0]/float(w)
         h = int(tilesize[1]/x)
 
         if offset != 0: offset = int(offset/x)
         
         #~ offset = 1s
+        
         pb = pb.subpixbuf(grid[0]*position[0], grid[1]*position[1], tilesize[0], tilesize[1])
         pb = pb.scale_simple(w, h, gtk.gdk.INTERP_BILINEAR)
         
