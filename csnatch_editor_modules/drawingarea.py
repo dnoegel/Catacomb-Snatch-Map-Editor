@@ -97,7 +97,7 @@ class DrawThingy(gtk.DrawingArea):
                     offset, sub = self.tiles.get_tile(obj, self.settings.MULTI, self.settings.MULTI)
                 da.window.draw_pixbuf(None, sub, 0, 0, _x, _y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)        
     
-    def draw_point(self, da, tile_x, tile_y, tile, force=False, update_neighbours=True):
+    def draw_point(self, da, tile_x, tile_y, tile, force=False, update_neighbours=True, expose=False):
         #~ print "draw", tile_x, tile_y, TILE_NAMES[tile]
         
         # Do not allow drawing outside the grid
@@ -108,15 +108,18 @@ class DrawThingy(gtk.DrawingArea):
         ## fix top tile if the current one was a big tile
         old_tile =  self.tiles.points[(tile_x, tile_y)]
         old_neighbor = old_tile.get_neighbour(TOP)
-        if old_neighbor and old_tile.is_big_tile():
+        if old_neighbor and old_tile.tile in BIG_TILES:
             tile_obj = self.tiles.place_tile(old_neighbor.tile, old_neighbor.x, old_neighbor.y)
             self.__draw_pixbuf(da, tile_obj.pixbuf, tile_obj.x, tile_obj.y, offset=tile_obj.offset)
+
+
         
+        if tile in NEED_GROUND:
+            tile_ground = self.tiles.place_tile(FLOOR, tile_x, tile_y)
+            self.__draw_pixbuf(da, tile_ground.pixbuf, tile_x, tile_y, offset=tile_ground.offset)
+
         ## RAIL
         if tile == RAIL:
-            tile_obj = self.tiles.place_tile(FLOOR, tile_x, tile_y)
-            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
-            
             tile_obj = self.tiles.place_tile(tile, tile_x, tile_y)
             self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
             
@@ -129,10 +132,16 @@ class DrawThingy(gtk.DrawingArea):
         else:
             tile_obj = self.tiles.place_tile(tile, tile_x, tile_y)
             self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
+
+
+        ## As the big-tile fix is slow, we don't need it after expose
+        # events, as the tiles are set from top left to bottom right
+        # so that no tiles will be overwritten
+        if expose: return
         
         ## Fix bottom tile if it was a big tile
         neighbour =  tile_obj.get_neighbour(BOTTOM)
-        if neighbour and neighbour.is_big_tile():
+        if neighbour and neighbour.tile in BIG_TILES:
             #~ tile_obj = self.tiles.place_tile(neighbour.tile, neighbour.x, neighbour.y)
             self.draw_point(da, neighbour.x, neighbour.y, neighbour.tile)
             #~ self.__draw_pixbuf(da, neighbour.pixbuf, neighbour.x, neighbour.y, offset=tile_obj.offset)
@@ -221,7 +230,7 @@ class DrawThingy(gtk.DrawingArea):
     def realize_event(self, da):
         self.current_gc = da.window.new_gc()
         self.set_color("#000000")
-        self.tiles = csnatch_editor_modules.tiles.Tiles(self.settings, self)
+        self.tiles = csnatch_editor_modules.tiles.Tiles(self.settings)
         #~ self.draw_points(da)
         #~ da.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
         #~ raw_input()
@@ -266,7 +275,7 @@ class DrawThingy(gtk.DrawingArea):
                 #~ offset, sub = self.tiles.get_tile(obj, self.settings.MULTI, self.settings.MULTI)
                 #~ da.window.draw_pixbuf(None, sub, 0, 0, _x, _y+offset, -1, -1, gtk.gdk.RGB_DITHER_NONE, 0, 0)  
                 #~ assert x >= 0 and y>=0
-                self.draw_point(da, x, y, tile.tile, force=True)
+                self.draw_point(da, x, y, tile.tile, force=True, expose = True)
 
         print i
 

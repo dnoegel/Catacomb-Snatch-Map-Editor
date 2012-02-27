@@ -173,3 +173,13 @@ class LevelChooser(gtk.Dialog):
                 self.current_image += 1
         self.set_image(self.levels[self.current_image])
 
+class ImageButton(gtk.Button):
+    def __init__(self, pb, text,):
+        gtk.Button.__init__(self, text)
+        self.img = gtk.Image()
+
+        self.setimage(pb)
+        
+    def setimage(self, pb):
+        self.img.set_from_pixbuf(pb)
+        self.set_image(self.img)

@@ -9,6 +9,7 @@ import csnatch_editor_modules
 import csnatch_editor_modules.settings
 import csnatch_editor_modules.drawingarea
 import csnatch_editor_modules.gui_helpers
+import csnatch_editor_modules.tiles
 
 from csnatch_editor_modules import TILES, TILE_NAMES, COLORS
 
@@ -79,18 +80,21 @@ class GUI(object):
         #
         # Tiles
         #
+        t = csnatch_editor_modules.tiles.Tiles(self.settings)
         bb = gtk.VButtonBox()
         for tile in TILES:
             name = TILE_NAMES[tile]
-            b = gtk.Button(name)
-            b.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(TILES[tile]))
-            if TILES[tile]  == "#000000":
-                lbl =  b.get_children()[0]
-                lbl.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
+            tile_obj = t.fake_tile(tile, 20, 20)
+            b = csnatch_editor_modules.gui_helpers.ImageButton(tile_obj.pixbuf, name)
+            #~ b.set_image_position(gtk.POS_TOP)
+            #~ b.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(TILES[tile]))
+            #~ if TILES[tile]  == "#000000":
+                #~ lbl =  b.get_children()[0]
+                #~ lbl.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
             bb.pack_start(b, False, False)
             b.show()
             b.connect("clicked", lambda x,y:self.drawing_area.set_object(y), tile)
-        bb.set_spacing(10)
+        #~ bb.set_spacing(10)
         self.table.attach(bb, 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.EXPAND|gtk.FILL)
         bb.set_layout(gtk.BUTTONBOX_START)
         bb.show()

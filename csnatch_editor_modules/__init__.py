@@ -14,10 +14,15 @@ __NAME__ = "Catacomb Snatch Map Editor"
  BARRIER,
  TREASURE,
  HOLE,
- RAIL
-) = range(6)
+ RAIL,
+ SPIKES
+) = range(7)
 
-TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail"]
+
+BIG_TILES = [WALL, BARRIER, TREASURE]
+NEED_GROUND = [RAIL, SPIKES]
+
+TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail", "Spike Trap"]
 
 TILES = {
     WALL: "#ff0000",
@@ -25,8 +30,10 @@ TILES = {
     BARRIER: "#ff7777",
     TREASURE: "#ffff00",
     HOLE: "#000000",
-    RAIL: "#969696"
+    RAIL: "#969696",
+    SPIKES: "#0000ff"
 }
+
 
 
 COLORS = dict((v,k) for k, v in TILES.iteritems())
