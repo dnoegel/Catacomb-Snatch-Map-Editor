@@ -23,15 +23,19 @@ __NAME__ = "Catacomb Snatch Map Editor"
  TEAM1_TURRET,
  TEAM2_TURRET,
  NEUTRAL_TURRET,
- LOOT
-) = range(15)
+ LOOT,
+ SAND,
+ UNPASSABLE_SAND,
+) = range(17)
 
 ## These tiles will need a special treatment when placed
 BIG_TILES = [WALL, BARRIER, TREASURE, BAT_SPAWNER, SNAKE_SPAWNER, MUMMY_SPAWNER, SCARAB_SPAWNER, HOLE]
+## Update surrounding tiles:
+UPDATE_TILES = [SAND, UNPASSABLE_SAND, RAIL]
 ## Transparent tiles; blit some ground first
 NEED_GROUND = [RAIL, SPIKES, BAT_SPAWNER, SNAKE_SPAWNER, MUMMY_SPAWNER, SCARAB_SPAWNER, TEAM1_TURRET, TEAM2_TURRET, NEUTRAL_TURRET, LOOT]
 ## Names for the tiles
-TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail", "Spike Trap", "Bat spawner", "Snake spawner", "Mummy spawner", "Scarab spawner", "Team1 Turret", "Team2 Turret", "Neutral Turret", "Loot (800)"]
+TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail", "Spike Trap", "Bat spawner", "Snake spawner", "Mummy spawner", "Scarab spawner", "Team1 Turret", "Team2 Turret", "Neutral Turret", "Loot (800)", "Sand", "Unpassable Sand"]
 
 ## Tiles2Color
 TILES = {
@@ -42,14 +46,17 @@ TILES = {
     HOLE: "#000000",
     RAIL: "#969696",
     SPIKES: "#0000ff",
-    BAT_SPAWNER: "#aa0000",
-    SNAKE_SPAWNER: "#00aa00",
-    MUMMY_SPAWNER: "#0000aa",
-    SCARAB_SPAWNER: "#aaaa00",
+    BAT_SPAWNER: "#006600",
+    SNAKE_SPAWNER: "#009900",
+    MUMMY_SPAWNER: "#00cc00",
+    SCARAB_SPAWNER: "#00ff00",
     TEAM1_TURRET: "#990099",
     TEAM2_TURRET: "#990033", 
     NEUTRAL_TURRET: "#990066",
-    LOOT: "#100700"
+    LOOT: "#100700",
+    SAND: "#a8a800",
+    UNPASSABLE_SAND: "#888800",
+    
 }
 
 ## Color2Tile

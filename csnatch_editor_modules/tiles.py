@@ -31,7 +31,7 @@ class Tile(object):
         offset_x, offset_y = NEIGHBOUR_TILES[position]
         n = self.tiles.points.get((self.x+offset_x, self.y+offset_y), None)
         if n:
-            return n.tile  == self.tile
+            return n.tile  == tile
         return False
         
 
@@ -83,7 +83,13 @@ class Tiles(object):
             NEUTRAL_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
             
             LOOT: (0, (24, 24), (24, 24), [(i, 0) for i in xrange(0, 14)], pb_loot),
+            SAND: (0, (32, 32), (32, 32), [(5, 0)], pb_floortiles),
+            UNPASSABLE_SAND: (0, (32, 32), (32, 32), [(6, 0)], pb_floortiles),
+            
+            
             "DARK": (0, (32, 32), (32, 32), [(1, 1)], pb_dark),
+            "SAND_TOP": (0, (32, 32), (32, 32), [(4, 1)], pb_floortiles),
+            "SAND_BOTTOM": (0, (32, 32), (32, 32), [(5, 1)], pb_floortiles),
         }
         self.settings = settings
         self.set_default_map()
@@ -160,6 +166,15 @@ class Tiles(object):
             if tile.check_neighbour(TOP, tile.tile):
                 offset, tilesize, grid, positions, pb =  self.positions["DARK"]
                 position = positions[0]
+        elif tile.tile == FLOOR:
+            ## Fix: If bot is true, only bottom tile will be shown
+            if tile.check_neighbour(TOP, SAND) or tile.check_neighbour(TOP, UNPASSABLE_SAND):
+                offset, tilesize, grid, positions, pb =  self.positions["SAND_TOP"]
+                position = positions[0]
+            if tile.check_neighbour(BOTTOM, SAND) or tile.check_neighbour(BOTTOM, UNPASSABLE_SAND):
+                offset, tilesize, grid, positions, pb =  self.positions["SAND_BOTTOM"]
+                position = positions[0]
+                
         x = tilesize[0]/float(w)
         h = int(tilesize[1]/x)
 

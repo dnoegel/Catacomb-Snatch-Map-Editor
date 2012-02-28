@@ -65,7 +65,7 @@ class DrawThingy(gtk.DrawingArea):
         print "draw points"
         for x in xrange(0, (self.settings.SIZE_X)):
             for y in xrange(0, (self.settings.SIZE_Y)):
-                print x, y
+                #~ print x, y
                 tile = self.tiles.points[(x, y)]
                 tile_obj = self.tiles.place_tile(tile.tile, tile.x, tile.y)
                 self.__draw_pixbuf(da, tile_obj.pixbuf, tile_obj.x, tile_obj.y, offset=tile_obj.offset)
@@ -121,20 +121,8 @@ class DrawThingy(gtk.DrawingArea):
             tile_ground = self.tiles.place_tile(FLOOR, tile_x, tile_y)
             self.__draw_pixbuf(da, tile_ground.pixbuf, tile_x, tile_y, offset=tile_ground.offset)
 
-        ## RAIL
-        if tile == RAIL:
-            tile_obj = self.tiles.place_tile(tile, tile_x, tile_y)
-            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
-            
-            if update_neighbours:
-                for pos in (TOP, LEFT, RIGHT, BOTTOM):
-                    neighbour =  tile_obj.get_neighbour(pos)
-                    if neighbour and neighbour.tile == tile_obj.tile:
-                        self.draw_point(da, neighbour.x, neighbour.y, tile, update_neighbours=False)
-                    
-        else:
-            tile_obj = self.tiles.place_tile(tile, tile_x, tile_y)
-            self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
+        tile_obj = self.tiles.place_tile(tile, tile_x, tile_y)
+        self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
 
 
         ## As the big-tile fix is slow, we don't need it after expose
@@ -148,6 +136,14 @@ class DrawThingy(gtk.DrawingArea):
             #~ tile_obj = self.tiles.place_tile(neighbour.tile, neighbour.x, neighbour.y)
             self.draw_point(da, neighbour.x, neighbour.y, neighbour.tile, force=True)
             #~ self.__draw_pixbuf(da, neighbour.pixbuf, neighbour.x, neighbour.y, offset=tile_obj.offset)
+            
+        ## Update surrounding tiles
+        if tile_obj.tile in UPDATE_TILES:
+            if update_neighbours:
+                for pos in (TOP, LEFT, RIGHT, BOTTOM):
+                    neighbour =  tile_obj.get_neighbour(pos)
+                    if neighbour:
+                        self.draw_point(da, neighbour.x, neighbour.y, neighbour.tile, update_neighbours=False)
                    
     def __draw_pixbuf(self, da, pb, x, y, offset):
         x = x * (self.settings.GRID_WIDTH + self.settings.MULTI)

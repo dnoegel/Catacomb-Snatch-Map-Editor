@@ -211,8 +211,11 @@ class GUI(object):
                 x=0
             #~ if pix != (255, 255, 255):
             hex_color = csnatch_editor_modules.gui_helpers.rgb2hex(pix)
-            tile = COLORS[hex_color]
-            self.drawing_area.tiles.place_tile(tile, x, y)
+            try:
+                tile = COLORS[hex_color]
+                self.drawing_area.tiles.place_tile(tile, x, y)
+            except KeyError:
+                print "Ignoring unknown tile {0}".format(hex_color)
             
             x+=1
         
