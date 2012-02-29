@@ -37,6 +37,7 @@ class Settings(dict):
             ("multi_level_support", False),
             ("last_save_dir", os.path.expanduser("~/.mojam/levels")),
             ("last_load_dir", os.path.expanduser("~/.mojam/levels")),
+            ("show_thumbnail", True),
             ("allow_modifying_borders", False)]:
             key, value = setting
             if dict.get(self, key, None) is None: 
@@ -59,13 +60,14 @@ class Settings(dict):
         
     def __setitem__(self, key, val):
         dict.__setitem__(self, key, val)
-        
+        print 23
         #~ print "Writing config"
         #~ print self
         with open(Settings.config_path, "w") as fh:
             tmpd = {}
             for key, value in dict.iteritems(self):
                 tmpd[key] = value
+                print key, value
             tmpd["SIZE_X"] = 48
             tmpd["SIZE_Y"] = 48
             pickled_dict = pickle.dumps(tmpd)

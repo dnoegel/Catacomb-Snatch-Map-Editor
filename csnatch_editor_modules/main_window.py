@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+import gobject
 import gtk
 import zipfile
 import tempfile
@@ -75,9 +76,10 @@ class GUI(object):
         self.drawing_area = csnatch_editor_modules.drawingarea.DrawThingy(self.settings, self)
         self.drawing_area.set_size_request(self.settings.WIDTH, self.settings.HEIGHT)
         self.drawing_area.connect("position", self.position_event)
+        self.drawing_area.connect("changed", self.changed_event)
         self.sw.add_with_viewport(self.drawing_area)
         
-        self.table.attach(self.sw, 0, 1, 2, 3, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.EXPAND|gtk.FILL)
+        self.table.attach(self.sw, 0, 1, 2, 4, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.EXPAND|gtk.FILL)
         
         #
         # Tiles
@@ -105,9 +107,15 @@ class GUI(object):
         sw2.show()
         bb.show()
 
+        self.image = gtk.Image()
+        self.table.attach(self.image, 1, 2, 3, 4, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK)
+        if self.settings.show_thumbnail:
+            self.image.show()
+        self.lock_thumbnail = False
+        #~ self.image.set_size_request(300,200)
         
         self.statusbar = gtk.Statusbar()
-        self.table.attach(self.statusbar, 0, 2, 3, 4, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
+        self.table.attach(self.statusbar, 0, 2, 4, 5, xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.SHRINK)
         self.statusbar.show()
         
         self.window.show()
@@ -120,7 +128,7 @@ class GUI(object):
         settings.props.gtk_button_images = True
         
         self.current_file = None
-        
+        self.create_thumbnail()
     
     def create_menues(self):
         #
@@ -147,14 +155,28 @@ class GUI(object):
         file_menu.show()
         
         
-        def toggled_menu(item):
-            self.settings.allow_modifying_borders = item.get_active()
+        def toggled_menu(item, mnu):
+            if mnu == "border":
+                self.settingsallow_modifying_borders = item.get_active()
+            elif mnu == "thumb":
+                if item.get_active():
+                    self.image.show()
+                else:
+                    self.image.hide()
+                self.settings.show_thumbnail = item.get_active()
         
         menu = gtk.Menu()
+        # border
         item = gtk.CheckMenuItem("Allow modifying the borders")
         item.set_active(self.settings.allow_modifying_borders)
         item.show()
-        item.connect("toggled", toggled_menu)
+        item.connect("toggled", toggled_menu, "border")
+        menu.append(item)
+        # thumbnail
+        item = gtk.CheckMenuItem("Show thumbnail")
+        item.set_active(self.settings.show_thumbnail)
+        item.show()
+        item.connect("toggled", toggled_menu, "thumb")
         menu.append(item)
         preferences_menu = gtk.MenuItem("Preferences")
         preferences_menu.set_submenu(menu)
@@ -225,6 +247,8 @@ class GUI(object):
             self.current_file = filename
         else:
             self.current_file = None
+            
+        self.create_thumbnail()
 
 
     #
@@ -272,6 +296,14 @@ class GUI(object):
             self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
             self.current_file = None
 
+    def changed_event(self, obj):
+        self.create_thumbnail()
+        self.lock_thumbnail = True
+        gobject.timeout_add(500, self.unlock_thumbnail)
+        
+    def unlock_thumbnail(self):
+        self.lock_thumbnail = False
+
     ## Show the current coords
     def position_event(self, obj, x, y):
         try:
@@ -281,4 +313,20 @@ class GUI(object):
         context_id = self.statusbar.get_context_id("pos")
         message_id = self.statusbar.push(context_id, "x{0}y{1}    | Size: {2}x{3}    |    Zoom: {4}    |    Tile under mouse: {5}".format(x, y, self.settings.SIZE_X, self.settings.SIZE_Y, self.settings.MULTI, tile_name))
     
+    def create_thumbnail(self):
+        if self.lock_thumbnail: return
+        print "drawing thumbnail"
+        w, h =  self.settings.SIZE_X, self.settings.SIZE_Y
+        pixbuf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, w, h)
+        pixmap,mask = pixbuf.render_pixmap_and_mask()
+        cm = pixmap.get_colormap()
+        for x in xrange(0, w):
+            for y in xrange(0, h):
+                color = self.drawing_area.tiles.points[(x, y)].color
+                gc = pixmap.new_gc(foreground=cm.alloc_color(color))
+                pixmap.draw_point(gc, x, y)
+        pixbuf.get_from_drawable(pixmap,cm,0,0,0,0,w,h)
+        pixbuf = pixbuf.scale_simple(200 ,200, gtk.gdk.INTERP_NEAREST)
+        self.image.set_from_pixbuf(pixbuf)
+        return False
     

@@ -125,10 +125,13 @@ class DrawThingy(gtk.DrawingArea):
         self.__draw_pixbuf(da, tile_obj.pixbuf, tile_x, tile_y, offset=tile_obj.offset)
 
 
+
         ## As the big-tile fix is slow, we don't need it after expose
         # events, as the tiles are set from top left to bottom right
         # so that no tiles will be overwritten
         if expose: return
+        
+        self.emit("changed")
         
         ## Fix bottom tile if it was a big tile
         neighbour =  tile_obj.get_neighbour(BOTTOM)
@@ -144,6 +147,7 @@ class DrawThingy(gtk.DrawingArea):
                     neighbour =  tile_obj.get_neighbour(pos)
                     if neighbour:
                         self.draw_point(da, neighbour.x, neighbour.y, neighbour.tile, update_neighbours=False)
+        
                    
     def __draw_pixbuf(self, da, pb, x, y, offset):
         x = x * (self.settings.GRID_WIDTH + self.settings.MULTI)
@@ -310,6 +314,7 @@ class DrawThingy(gtk.DrawingArea):
             self.draw_point(da, x, y, FLOOR)
         else:
             print event.button
+        
         return True
         
     def scroll_event(self, da, event):
@@ -329,3 +334,5 @@ class DrawThingy(gtk.DrawingArea):
 gobject.type_register(DrawThingy)
 gobject.signal_new("position", DrawThingy, gobject.SIGNAL_RUN_FIRST,
                    gobject.TYPE_NONE, (int, int, ))
+gobject.signal_new("changed", DrawThingy, gobject.SIGNAL_RUN_FIRST,
+                   gobject.TYPE_NONE, ())
