@@ -99,23 +99,25 @@ class Tiles(object):
         ## Floors
         for x in range(0, self.settings.SIZE_X):
             for y in range(0, self.settings.SIZE_Y):
-                self.place_tile(FLOOR, x, y)
+                self.place_tile(FLOOR, x, y, True)
         ## Top and bottom walls
         for i in xrange(0, self.settings.SIZE_X):
-            self.place_tile(WALL, i, 0)
-            self.place_tile(WALL, i, self.settings.SIZE_Y-1)
+            self.place_tile(WALL, i, 0, True)
+            self.place_tile(WALL, i, self.settings.SIZE_Y-1, True)
         ## left and right walls
         for i in xrange(0, self.settings.SIZE_Y):
-            self.place_tile(WALL, self.settings.SIZE_X-1, i)
-            self.place_tile(WALL, 0, i)
+            self.place_tile(WALL, self.settings.SIZE_X-1, i, True)
+            self.place_tile(WALL, 0, i, True)
+            
         ## starting points
+        start = int(self.settings.SIZE_X / 2)-2
         for i in [0, (self.settings.SIZE_Y-1)]:
-            self.place_tile(FLOOR, 22, i)
-            self.place_tile(RAIL, 23, i)
-            self.place_tile(FLOOR, 24, i)
+            self.place_tile(FLOOR, start, i, True)
+            self.place_tile(RAIL, start+1, i, True)
+            self.place_tile(FLOOR, start+2, i, True)
+        print "done"
         
-        
-    def place_tile(self, tile, x, y):
+    def place_tile(self, tile, x, y, lazy=False):
         tile_obj = self.points.get((x,y), None)
         if not tile_obj:
             tile_obj = Tile(self, tile, x, y)
@@ -123,10 +125,11 @@ class Tiles(object):
         else:
             tile_obj.tile = tile
             tile_obj.color = TILES[tile]
-        
-        offset, pb = self.__get_tile_graphics(tile_obj, self.settings.MULTI, self.settings.MULTI)
-        tile_obj.offset = offset
-        tile_obj.pixbuf = pb
+
+        if not lazy:
+            offset, pb = self.__get_tile_graphics(tile_obj, self.settings.MULTI, self.settings.MULTI)
+            tile_obj.offset = offset
+            tile_obj.pixbuf = pb
         
         return tile_obj
                 
