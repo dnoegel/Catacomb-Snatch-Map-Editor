@@ -157,7 +157,7 @@ class GUI(object):
         
         def toggled_menu(item, mnu):
             if mnu == "border":
-                self.settingsallow_modifying_borders = item.get_active()
+                self.settings.allow_modifying_borders = item.get_active()
             elif mnu == "thumb":
                 if item.get_active():
                     self.image.show()
@@ -297,12 +297,14 @@ class GUI(object):
             self.current_file = None
 
     def changed_event(self, obj):
+        if self.lock_thumbnail or not self.settings.show_thumbnail: return
         self.create_thumbnail()
         self.lock_thumbnail = True
         gobject.timeout_add(500, self.unlock_thumbnail)
         
     def unlock_thumbnail(self):
         self.lock_thumbnail = False
+        return False
 
     ## Show the current coords
     def position_event(self, obj, x, y):
@@ -314,7 +316,6 @@ class GUI(object):
         message_id = self.statusbar.push(context_id, "x{0}y{1}    | Size: {2}x{3}    |    Zoom: {4}    |    Tile under mouse: {5}".format(x, y, self.settings.SIZE_X, self.settings.SIZE_Y, self.settings.MULTI, tile_name))
     
     def create_thumbnail(self):
-        if self.lock_thumbnail: return
         print "drawing thumbnail"
         w, h =  self.settings.SIZE_X, self.settings.SIZE_Y
         pixbuf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, w, h)
@@ -328,5 +329,4 @@ class GUI(object):
         pixbuf.get_from_drawable(pixmap,cm,0,0,0,0,w,h)
         pixbuf = pixbuf.scale_simple(200 ,200, gtk.gdk.INTERP_NEAREST)
         self.image.set_from_pixbuf(pixbuf)
-        return False
     

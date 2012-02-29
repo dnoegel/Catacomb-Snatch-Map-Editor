@@ -101,9 +101,10 @@ class DrawThingy(gtk.DrawingArea):
         #~ print "draw", tile_x, tile_y, TILE_NAMES[tile]
         
         # Do not allow drawing outside the grid
-        if tile_x >= self.settings.SIZE_X or tile_y >= self.settings.SIZE_Y: return
+        if tile_x >= self.settings.SIZE_X or tile_y >= self.settings.SIZE_Y or tile_x < 0 or tile_y < 0: return
         # Only allow modifying the border, when the correspinding option was set
-        if not (self.settings.allow_modifying_borders or force) and (tile_x == 0 or tile_y == 0 or tile_x == (self.settings.SIZE_X-1) or tile_y == (self.settings.SIZE_Y-1)) : return
+        print self.settings.allow_modifying_borders
+        if not(self.settings.allow_modifying_borders or force) and (tile_x == 0 or tile_y == 0 or tile_x == (self.settings.SIZE_X-1) or tile_y == (self.settings.SIZE_Y-1)) : return
 
 
         ## fix top tile if the current one was a big tile

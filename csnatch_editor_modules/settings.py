@@ -60,7 +60,6 @@ class Settings(dict):
         
     def __setitem__(self, key, val):
         dict.__setitem__(self, key, val)
-        print 23
         #~ print "Writing config"
         #~ print self
         with open(Settings.config_path, "w") as fh:
