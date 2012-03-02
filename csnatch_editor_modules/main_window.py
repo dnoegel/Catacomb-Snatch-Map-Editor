@@ -292,9 +292,20 @@ class GUI(object):
         elif user == "Quit":
             self.window.destroy()
         elif user == "Clear map":
-            self.drawing_area.tiles.set_default_map()
-            self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
-            self.current_file = None
+            dia = csnatch_editor_modules.gui_helpers.NewLevelDialog()
+            result = dia.run()
+            if result == gtk.RESPONSE_OK:
+                w = int(dia.spin_width.get_value())
+                h = int(dia.spin_height.get_value())
+                dia.destroy()
+                self.settings.SIZE_X = w
+                self.settings.SIZE_Y = h
+                self.drawing_area.tiles.set_default_map()
+                self.drawing_area.queue_draw_area(0, 0, self.settings.WIDTH, self.settings.HEIGHT)
+                self.current_file = None
+            else:
+                dia.destroy()
+                return
 
     def changed_event(self, obj):
         if self.lock_thumbnail or not self.settings.show_thumbnail: return

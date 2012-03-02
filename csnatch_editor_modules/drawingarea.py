@@ -21,6 +21,7 @@ class DrawThingy(gtk.DrawingArea):
         self.set_events(gtk.gdk.EXPOSURE_MASK
                             | gtk.gdk.LEAVE_NOTIFY_MASK
                             | gtk.gdk.BUTTON_PRESS_MASK
+                            | gtk.gdk.BUTTON_RELEASE_MASK
                             | gtk.gdk.SCROLL_MASK
                             | gtk.gdk.POINTER_MOTION_MASK
                             | gtk.gdk.POINTER_MOTION_HINT_MASK )
@@ -29,6 +30,7 @@ class DrawThingy(gtk.DrawingArea):
         self.connect("configure_event", self.configure_event)
         self.connect("motion_notify_event", self.motion_notify_event)
         self.connect("button_press_event", self.button_press_event)
+        self.connect("button_release_event", self.button_release_event)
         self.connect('realize',       self.realize_event)
         
         
@@ -36,6 +38,8 @@ class DrawThingy(gtk.DrawingArea):
         self.current_object = WALL
         self.set_double_buffered(True)
         #~ self.realize()
+        
+        self.mouse_move_starting_coords = None
         
 
     ## Set the name of the current tile
@@ -103,7 +107,6 @@ class DrawThingy(gtk.DrawingArea):
         # Do not allow drawing outside the grid
         if tile_x >= self.settings.SIZE_X or tile_y >= self.settings.SIZE_Y or tile_x < 0 or tile_y < 0: return
         # Only allow modifying the border, when the correspinding option was set
-        print self.settings.allow_modifying_borders
         if not(self.settings.allow_modifying_borders or force) and (tile_x == 0 or tile_y == 0 or tile_x == (self.settings.SIZE_X-1) or tile_y == (self.settings.SIZE_Y-1)) : return
 
 
@@ -302,9 +305,36 @@ class DrawThingy(gtk.DrawingArea):
             self.draw_point(da, x, y, self.current_object)
         elif event.state & gtk.gdk.BUTTON3_MASK and self.pixmap:
             self.draw_point(da, x, y, FLOOR)
+        elif event.state & gtk.gdk.BUTTON2_MASK:
+            if event.time - self.mouse_move_starting_coords[2] > 25:
+                old_x, old_y, old_time = self.mouse_move_starting_coords
+                change_x = 0
+                if old_x < event.x - 20:
+                    change_x = 20
+                elif old_x > event.x + 20:
+                    change_x = -20
+                adj = self.main.sw.get_hadjustment()
+                val_x =  adj.get_value() + change_x
+                self.main.sw.get_hadjustment().set_value(val_x)
+
+                change_y = 0
+                if old_y < event.y - 20:
+                    change_y = 20
+                elif old_y > event.y + 20:
+                    change_y = -20
+                adj = self.main.sw.get_vadjustment()
+                val_y =  adj.get_value() + change_y
+                self.main.sw.get_vadjustment().set_value(val_y)
+                
+                self.mouse_move_starting_coords = event.x, event.y, event.time
         
         return True
+    
+    def button_release_event(self, da, event):
         
+        if event.button == 2 and self.mouse_move_starting_coords:
+                self.mouse_move_starting_coords = None
+
     def button_press_event(self, da, event):
         
         x, y = int(math.floor(event.x/(self.settings.MULTI+self.settings.GRID_WIDTH))), int(math.floor(event.y/(self.settings.MULTI+self.settings.GRID_WIDTH)))
@@ -313,6 +343,8 @@ class DrawThingy(gtk.DrawingArea):
             self.draw_point(da, x, y, self.current_object)
         elif event.button == 3 and self.pixmap:
             self.draw_point(da, x, y, FLOOR)
+        elif event.button == 2:
+            self.mouse_move_starting_coords = event.x, event.y, event.time
         else:
             print event.button
         

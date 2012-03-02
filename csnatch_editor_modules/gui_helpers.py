@@ -47,7 +47,7 @@ def get_file_from_jar(jar):
 ## Put level1.bmp into .jar
 def save_to_jar(filename, jar, level="level1.bmp"):
     if not level.endswith(".bmp"): level = "{0}.bmp".format(level)
-    print filename, jar, level
+    print fi, jar, level
     with zipfile.ZipFile(jar, "a") as zf:
         zf.write(filename, "levels/{0}".format(level))
         #~ return os.path.join(tmp, "levels", "level1.bmp")
@@ -111,6 +111,43 @@ def save_file(filetype, directory=None):
     if filename and not filename.endswith(".bmp") and filetype == "bmp":
         return "{0}.bmp".format(filename)
     return filename
+
+class NewLevelDialog(gtk.Dialog):
+    def __init__(self):
+        gtk.Dialog.__init__(self)
+        
+        self.set_modal(True)
+        self.set_resizable(False)
+        
+        hbox = gtk.HBox()
+        self.vbox.pack_start(hbox, False, True)
+        
+        lbl = gtk.Label("Width: ")
+        hbox.pack_start(lbl, False, True)
+        
+        adj = gtk.Adjustment(value=32, lower=7, upper=512, step_incr=1)
+        self.spin_width = gtk.SpinButton(adjustment=adj, climb_rate=0.0, digits=0)
+        #~ spin.connect("value-changed", self.value_changed_event, "width")
+        hbox.pack_start(self.spin_width, False, True)
+        
+        lbl = gtk.Label("Height: ")
+        hbox.pack_start(lbl, False, True)
+        
+        adj = gtk.Adjustment(value=32, lower=7, upper=512, step_incr=1)
+        self.spin_height = gtk.SpinButton(adjustment=adj, digits=0)
+        #~ spin.connect("value-changed", self.value_changed_event, "height")
+        hbox.pack_start(self.spin_height, False, True)
+        
+        self.show_all()
+
+        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+    #~ def value_changed_event(self, widget, direction):
+        #~ if direction == "height":
+            #~ 
+        #~ elif direction == "width":
+            
+        
 
 class LevelChooser(gtk.Dialog):
     def __init__(self, levels):
