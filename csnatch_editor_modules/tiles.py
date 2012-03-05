@@ -54,6 +54,7 @@ class Tiles(object):
         turret1 = os.path.join(self.path, "turret.png")
         dark = os.path.join(self.path, "dark.png")
         droptrap  = os.path.join(self.path, "droptrap.png")
+        chest  = os.path.join(self.path, "chest_small.png")
         
         pb_floortiles = gtk.gdk.pixbuf_new_from_file(floortiles)
         pb_rails = gtk.gdk.pixbuf_new_from_file(rails)
@@ -65,35 +66,37 @@ class Tiles(object):
         pb_dark = gtk.gdk.pixbuf_new_from_file(dark)
 
         pb_droptrap = gtk.gdk.pixbuf_new_from_file(droptrap)
+        pb_chest = gtk.gdk.pixbuf_new_from_file(chest)
 
         self.positions = {
             ##    offset tilesize   grid             positions
-            WALL: (-32, (32, 64), (32, 32), [(0, 3), (1, 3), (2, 3), (3, 3)], pb_floortiles),
-            FLOOR: (0, (32, 32), (32, 32), [(0, 0), (1, 0), (2, 0), (3, 0)], pb_floortiles),
-            BARRIER: (-24, (32, 56), (32, 56), [(4, 0)], pb_treasure_barrier),
-            TREASURE: (-24, (32, 56), (32, 56), [(0, 0)], pb_treasure_barrier),
-            HOLE: (0, (32, 32), (32, 32), [(4, 0)], pb_floortiles),
-            RAIL: (0, (32, 32), (32, 38), [(i, 0) for i in xrange(0, 7)], pb_rails),
-            SPIKES: (0, (32, 32), (32, 32),[(i, 0) for i in xrange(0, 4)], pb_spikes),
+            WALL: ( (32, 64), (32, 32), [(0, 3), (1, 3), (2, 3), (3, 3)], pb_floortiles),
+            FLOOR: ( (32, 32), (32, 32), [(0, 0), (1, 0), (2, 0), (3, 0)], pb_floortiles),
+            BARRIER: ( (32, 56), (32, 56), [(4, 0)], pb_treasure_barrier),
+            TREASURE: ( (32, 56), (32, 56), [(0, 0)], pb_treasure_barrier),
+            HOLE: ( (32, 32), (32, 32), [(4, 0)], pb_floortiles),
+            RAIL: ((32, 32), (32, 38), [(i, 0) for i in xrange(0, 7)], pb_rails),
+            SPIKES: ((32, 32), (32, 32),[(i, 0) for i in xrange(0, 4)], pb_spikes),
             
-            BAT_SPAWNER: (-8, (32, 40), (32, 40),[(0, 0)], pb_spawner),
-            SNAKE_SPAWNER: (-8, (32, 40), (32, 40), [(0, 0)], pb_spawner),
-            MUMMY_SPAWNER:(-8, (32, 40), (32, 40), [(0, 0)], pb_spawner),
-            SCARAB_SPAWNER: (-8, (32, 40), (32, 40), [(0, 0)], pb_spawner),
+            BAT_SPAWNER: ((32, 40), (32, 40),[(0, 0)], pb_spawner),
+            SNAKE_SPAWNER: ((32, 40), (32, 40), [(0, 0)], pb_spawner),
+            MUMMY_SPAWNER:((32, 40), (32, 40), [(0, 0)], pb_spawner),
+            SCARAB_SPAWNER: ((32, 40), (32, 40), [(0, 0)], pb_spawner),
             
-            TEAM1_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
-            TEAM2_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
-            NEUTRAL_TURRET: (0, (32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
+            TEAM1_TURRET: ((32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
+            TEAM2_TURRET: ((32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
+            NEUTRAL_TURRET: ((32, 32), (32, 32), [(i, 0) for i in xrange(0, 8)], pb_turret1),
             
-            LOOT: (0, (24, 24), (24, 24), [(i, 0) for i in xrange(0, 14)], pb_loot),
-            SAND: (0, (32, 32), (32, 32), [(5, 0)], pb_floortiles),
-            UNPASSABLE_SAND: (0, (32, 32), (32, 32), [(6, 0)], pb_floortiles),
+            LOOT: ((24, 24), (24, 24), [(i, 0) for i in xrange(0, 14)], pb_loot),
+            SAND: ((32, 32), (32, 32), [(5, 0)], pb_floortiles),
+            UNPASSABLE_SAND: ((32, 32), (32, 32), [(6, 0)], pb_floortiles),
             
-            DROP_TRAP: (0, (32, 32), (32, 32), [(3, 0)], pb_droptrap),
+            DROP_TRAP: ((32, 32), (32, 32), [(3, 0)], pb_droptrap),
+            CHEST: ((32, 53), (32, 53), [(1, 0)], pb_chest),
             
-            "DARK": (0, (32, 32), (32, 32), [(1, 1)], pb_dark),
-            "SAND_TOP": (0, (32, 32), (32, 32), [(4, 1)], pb_floortiles),
-            "SAND_BOTTOM": (0, (32, 32), (32, 32), [(5, 1)], pb_floortiles),
+            "DARK": ((32, 32), (32, 32), [(1, 1)], pb_dark),
+            "SAND_TOP": ((32, 32), (32, 32), [(4, 1)], pb_floortiles),
+            "SAND_BOTTOM": ((32, 32), (32, 32), [(5, 1)], pb_floortiles),
         }
         self.settings = settings
         self.set_default_map()
@@ -148,8 +151,8 @@ class Tiles(object):
         return tile_obj
     
     def __get_tile_graphics(self, tile, w, h):
-        offset, tilesize, grid, positions, pb =  self.positions[tile.tile]
-        
+        tilesize, grid, positions, pb =  self.positions[tile.tile]
+
         position = random.choice(positions)
         
         if tile.tile == RAIL:
@@ -171,17 +174,22 @@ class Tiles(object):
             position = (position, 0)
         elif tile.tile == HOLE:
             if tile.check_neighbour(TOP, tile.tile):
-                offset, tilesize, grid, positions, pb =  self.positions["DARK"]
+                tilesize, grid, positions, pb =  self.positions["DARK"]
                 position = positions[0]
         elif tile.tile == FLOOR:
             ## Fix: If bot is true, only bottom tile will be shown
             if tile.check_neighbour(TOP, SAND) or tile.check_neighbour(TOP, UNPASSABLE_SAND):
-                offset, tilesize, grid, positions, pb =  self.positions["SAND_TOP"]
+                tilesize, grid, positions, pb =  self.positions["SAND_TOP"]
                 position = positions[0]
             if tile.check_neighbour(BOTTOM, SAND) or tile.check_neighbour(BOTTOM, UNPASSABLE_SAND):
-                offset, tilesize, grid, positions, pb =  self.positions["SAND_BOTTOM"]
+                tilesize, grid, positions, pb =  self.positions["SAND_BOTTOM"]
                 position = positions[0]
-                
+
+        if tilesize[1]>32:
+            offset = 32-tilesize[1]
+        else:
+            offset = 0
+
         x = tilesize[0]/float(w)
         h = int(tilesize[1]/x)
 
