@@ -53,6 +53,7 @@ class Tiles(object):
         loot = os.path.join(self.path, "pickup_gem_diamond_24.png")
         turret1 = os.path.join(self.path, "turret.png")
         dark = os.path.join(self.path, "dark.png")
+        droptrap  = os.path.join(self.path, "droptrap.png")
         
         pb_floortiles = gtk.gdk.pixbuf_new_from_file(floortiles)
         pb_rails = gtk.gdk.pixbuf_new_from_file(rails)
@@ -62,6 +63,8 @@ class Tiles(object):
         pb_loot = gtk.gdk.pixbuf_new_from_file(loot)
         pb_turret1 = gtk.gdk.pixbuf_new_from_file(turret1)
         pb_dark = gtk.gdk.pixbuf_new_from_file(dark)
+
+        pb_droptrap = gtk.gdk.pixbuf_new_from_file(droptrap)
 
         self.positions = {
             ##    offset tilesize   grid             positions
@@ -86,6 +89,7 @@ class Tiles(object):
             SAND: (0, (32, 32), (32, 32), [(5, 0)], pb_floortiles),
             UNPASSABLE_SAND: (0, (32, 32), (32, 32), [(6, 0)], pb_floortiles),
             
+            DROP_TRAP: (0, (32, 32), (32, 32), [(3, 0)], pb_droptrap),
             
             "DARK": (0, (32, 32), (32, 32), [(1, 1)], pb_dark),
             "SAND_TOP": (0, (32, 32), (32, 32), [(4, 1)], pb_floortiles),

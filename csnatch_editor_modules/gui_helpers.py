@@ -102,7 +102,7 @@ def save_file(filetype, directory=None):
     chooser.add_filter(ffilter)
     ret = chooser.run()
     
-    if ret == gtk.RESPONSE_CANCEL:
+    if ret != gtk.RESPONSE_OK:
         chooser.destroy()
         return None
     

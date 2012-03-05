@@ -26,16 +26,17 @@ __NAME__ = "Catacomb Snatch Map Editor"
  LOOT,
  SAND,
  UNPASSABLE_SAND,
-) = range(17)
+ DROP_TRAP
+) = range(18)
 
 ## These tiles will need a special treatment when placed
-BIG_TILES = [WALL, BARRIER, TREASURE, BAT_SPAWNER, SNAKE_SPAWNER, MUMMY_SPAWNER, SCARAB_SPAWNER, HOLE]
+BIG_TILES = [WALL, BARRIER, TREASURE, BAT_SPAWNER, SNAKE_SPAWNER, MUMMY_SPAWNER, SCARAB_SPAWNER]
 ## Update surrounding tiles:
-UPDATE_TILES = [SAND, UNPASSABLE_SAND, RAIL]
+UPDATE_TILES = [SAND, UNPASSABLE_SAND, RAIL, HOLE, DROP_TRAP]
 ## Transparent tiles; blit some ground first
 NEED_GROUND = [RAIL, SPIKES, BAT_SPAWNER, SNAKE_SPAWNER, MUMMY_SPAWNER, SCARAB_SPAWNER, TEAM1_TURRET, TEAM2_TURRET, NEUTRAL_TURRET, LOOT]
 ## Names for the tiles
-TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail", "Spike Trap", "Bat spawner", "Snake spawner", "Mummy spawner", "Scarab spawner", "Team1 Turret", "Team2 Turret", "Neutral Turret", "Loot (800)", "Sand", "Unpassable Sand"]
+TILE_NAMES = ["Wall", "Floor", "Barrier", "Treasure", "Hole", "Rail", "Spike Trap", "Bat spawner", "Snake spawner", "Mummy spawner", "Scarab spawner", "Team1 Turret", "Team2 Turret", "Neutral Turret", "Loot (800)", "Sand", "Unpassable Sand", "Sturzfalle"]
 
 ## Tiles2Color
 TILES = {
@@ -56,6 +57,7 @@ TILES = {
     LOOT: "#100700",
     SAND: "#a8a800",
     UNPASSABLE_SAND: "#888800",
+    DROP_TRAP: '#0000cc'
     
 }
 
