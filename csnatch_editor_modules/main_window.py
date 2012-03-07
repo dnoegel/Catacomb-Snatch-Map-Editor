@@ -207,7 +207,11 @@ class GUI(object):
     def save(self, filename=None, set_filename=True):
         img = Image.new("RGB", [self.settings.SIZE_X,self.settings.SIZE_Y], "white")
         for coords, tile in self.drawing_area.tiles.points.iteritems():
-            img.putpixel(coords,  tuple(ord(c) for c in tile.color[1:].decode('hex')))
+            try:
+                img.putpixel(coords,  tuple(ord(c) for c in tile.color[1:].decode('hex')))
+            except IndexError:
+                print coords, tile.color
+                raise
         img.save(filename)
         if set_filename:
             self.current_file = filename
@@ -309,9 +313,8 @@ class GUI(object):
 
     def changed_event(self, obj):
         if self.lock_thumbnail or not self.settings.show_thumbnail: return
-        self.create_thumbnail()
+        gobject.idle_add(self.create_thumbnail)
         self.lock_thumbnail = True
-        gobject.timeout_add(500, self.unlock_thumbnail)
         
     def unlock_thumbnail(self):
         self.lock_thumbnail = False
@@ -340,4 +343,6 @@ class GUI(object):
         pixbuf.get_from_drawable(pixmap,cm,0,0,0,0,w,h)
         pixbuf = pixbuf.scale_simple(200 ,200, gtk.gdk.INTERP_NEAREST)
         self.image.set_from_pixbuf(pixbuf)
+        
+        gobject.timeout_add(500, self.unlock_thumbnail)
     

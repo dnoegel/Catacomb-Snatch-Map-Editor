@@ -66,8 +66,9 @@ class Settings(dict):
             tmpd = {}
             for key, value in dict.iteritems(self):
                 tmpd[key] = value
-                print key, value
-            tmpd["SIZE_X"] = 48
-            tmpd["SIZE_Y"] = 48
+                #~ print key, value
+            #~ tmpd["SIZE_X"] = 48
+            #~ tmpd["SIZE_Y"] = 48
+            print tmpd
             pickled_dict = pickle.dumps(tmpd)
             fh.write(pickled_dict)

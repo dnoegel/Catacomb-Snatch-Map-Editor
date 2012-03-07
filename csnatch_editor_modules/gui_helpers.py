@@ -125,7 +125,7 @@ class NewLevelDialog(gtk.Dialog):
         lbl = gtk.Label("Width: ")
         hbox.pack_start(lbl, False, True)
         
-        adj = gtk.Adjustment(value=32, lower=7, upper=512, step_incr=1)
+        adj = gtk.Adjustment(value=48, lower=7, upper=512, step_incr=1)
         self.spin_width = gtk.SpinButton(adjustment=adj, climb_rate=0.0, digits=0)
         #~ spin.connect("value-changed", self.value_changed_event, "width")
         hbox.pack_start(self.spin_width, False, True)
@@ -133,7 +133,7 @@ class NewLevelDialog(gtk.Dialog):
         lbl = gtk.Label("Height: ")
         hbox.pack_start(lbl, False, True)
         
-        adj = gtk.Adjustment(value=32, lower=7, upper=512, step_incr=1)
+        adj = gtk.Adjustment(value=48, lower=7, upper=512, step_incr=1)
         self.spin_height = gtk.SpinButton(adjustment=adj, digits=0)
         #~ spin.connect("value-changed", self.value_changed_event, "height")
         hbox.pack_start(self.spin_height, False, True)

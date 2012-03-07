@@ -55,6 +55,8 @@ class Tiles(object):
         dark = os.path.join(self.path, "dark.png")
         droptrap  = os.path.join(self.path, "droptrap.png")
         chest  = os.path.join(self.path, "chest_small.png")
+        pharao  = os.path.join(self.path, "enemy_pharao_anim_48.png")
+        
         
         pb_floortiles = gtk.gdk.pixbuf_new_from_file(floortiles)
         pb_rails = gtk.gdk.pixbuf_new_from_file(rails)
@@ -67,9 +69,11 @@ class Tiles(object):
 
         pb_droptrap = gtk.gdk.pixbuf_new_from_file(droptrap)
         pb_chest = gtk.gdk.pixbuf_new_from_file(chest)
+        
+        pb_pharao = gtk.gdk.pixbuf_new_from_file(pharao)
 
         self.positions = {
-            ##    offset tilesize   grid             positions
+            ##    tilesize   grid             positions
             WALL: ( (32, 64), (32, 32), [(0, 3), (1, 3), (2, 3), (3, 3)], pb_floortiles),
             FLOOR: ( (32, 32), (32, 32), [(0, 0), (1, 0), (2, 0), (3, 0)], pb_floortiles),
             BARRIER: ( (32, 56), (32, 56), [(4, 0)], pb_treasure_barrier),
@@ -93,6 +97,8 @@ class Tiles(object):
             
             DROP_TRAP: ((32, 32), (32, 32), [(3, 0)], pb_droptrap),
             CHEST: ((32, 53), (32, 53), [(1, 0)], pb_chest),
+            
+            PHARAO: ((48, 48), (48, 48), [(i, 3) for i in xrange(0,4)], pb_pharao), 
             
             "DARK": ((32, 32), (32, 32), [(1, 1)], pb_dark),
             "SAND_TOP": ((32, 32), (32, 32), [(4, 1)], pb_floortiles),
@@ -185,7 +191,7 @@ class Tiles(object):
                 tilesize, grid, positions, pb =  self.positions["SAND_BOTTOM"]
                 position = positions[0]
 
-        if tilesize[1]>32:
+        if tilesize[1]>32 and tile.tile != PHARAO:
             offset = 32-tilesize[1]
         else:
             offset = 0
